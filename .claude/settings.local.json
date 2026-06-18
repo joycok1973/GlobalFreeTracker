@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"E:\\\\python\\\\chrome-extension\\\\angular-app\\\\src\\\\app\")",
+      "PowerShell(New-Item -ItemType Directory -Force -Path \"E:\\\\python\\\\chrome-extension\\\\chrome-extension\")",
+      "PowerShell(Get-ChildItem \"E:\\\\python\\\\chrome-extension\" -Recurse | Where-Object { !$_.PSIsContainer } | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"E:\\\\python\\\\chrome-extension\\\\\", \"\"\\) })",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__javascript_tool",
+      "WebFetch(domain:www.oocl.com)",
+      "WebSearch",
+      "WebFetch(domain:www.track-trace.com)",
+      "WebFetch(domain:ct.shipmentlink.com)",
+      "WebFetch(domain:www.evergreen-line.com)",
+      "WebFetch(domain:www.shipmentlink.com)",
+      "WebFetch(domain:www.cma-cgm.com)",
+      "WebFetch(domain:www.maersk.com)",
+      "WebFetch(domain:www.hmm21.com)",
+      "WebFetch(domain:www.hapag-lloyd.com)",
+      "WebFetch(domain:portal.vanguardlogistics.com)",
+      "PowerShell(Get-ChildItem E:\\\\python\\\\chrome-extension\\\\ | Where-Object { $_.Name -ne 'node_modules' -and $_.Name -ne 'angular-app' })",
+      "WebFetch(domain:esvc.smlines.com)",
+      "Bash(dir /s \"E:\\\\python\\\\chrome-extension\\\\angular-app\\\\src\")",
+      "Bash(grep -E \"\\\\.\\(py|md|txt|json\\)$\")",
+      "Bash(Get-ChildItem -Path \"E:\\\\python\\\\container-tracking2\" -Recurse -File)",
+      "Bash(Select-Object FullName)",
+      "PowerShell(if \\(!\\(Test-Path \"E:\\\\python\\\\shipment-tracking\"\\)\\) { New-Item -ItemType Directory -Path \"E:\\\\python\\\\shipment-tracking\" }; ls \"E:\\\\python\\\\shipment-tracking\")",
+      "PowerShell(cd \"E:\\\\python\\\\shipment-tracking\\\\angular-app\"; node node_modules/@angular/cli/bin/ng.js serve --port 4200 2>&1 &)",
+      "PowerShell(cd \"E:\\\\python\\\\shipment-tracking\\\\angular-app\"; Start-Process -NoNewWindow -FilePath \"node\" -ArgumentList \"node_modules/@angular/cli/bin/ng.js\", \"serve\", \"--port\", \"4200\" -RedirectStandardOutput \"$env:TEMP\\\\ng-serve.log\" -RedirectStandardError \"$env:TEMP\\\\ng-serve-err.log\"; Start-Sleep -Seconds 10; Get-Content \"$env:TEMP\\\\ng-serve.log\", \"$env:TEMP\\\\ng-serve-err.log\" | Select-Object -Last 10)",
+      "Bash(dir /s /b)",
+      "Bash(findstr /v node_modules)"
+    ]
+  }
+}

@@ -1,0 +1,294 @@
+// ── Injected into the carrier page (must be self-contained) ──────────────────
+// Invoked via: chrome.scripting.executeScript({ func: fillBookingNumber, args: [bookingNo, hostname, config] })
+// Returns true if the BL number was typed and submitted, false if no input was found (e.g. Cloudflare page).
+async function fillBookingNumber(bookingNo, hostname, config) {
+
+  config = config ?? {
+    inputSelectors: ['input[type="search"]', 'input[type="text"]:not([type="hidden"])'],
+    submitSelectors: [],
+    submitMethod: 'enter'
+  };
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const rand  = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+
+  function keyProps(char) {
+    const upper = char.toUpperCase();
+    const code  = /[A-Z]/.test(upper) ? `Key${upper}` : /[0-9]/.test(char) ? `Digit${char}` : char;
+    const kc    = upper.charCodeAt(0);
+    return { key: char, code, keyCode: kc, which: kc, charCode: char.charCodeAt(0) };
+  }
+
+  function getNativeAccessors(el) {
+    const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+    return {
+      get: Object.getOwnPropertyDescriptor(proto, 'value')?.get,
+      set: Object.getOwnPropertyDescriptor(proto, 'value')?.set
+    };
+  }
+
+  // ── Human-like focus (mouse hover → down → up → click) ────────────────────
+
+  async function humanFocus(el) {
+    const rect = el.getBoundingClientRect();
+    const cx   = rect.left + rect.width  / 2 + rand(-5, 5);
+    const cy   = rect.top  + rect.height / 2 + rand(-3, 3);
+    const opts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy };
+
+    el.dispatchEvent(new MouseEvent('mouseover', opts));
+    await sleep(rand(60, 140));
+    el.dispatchEvent(new MouseEvent('mousemove', opts));
+    await sleep(rand(30, 80));
+    el.dispatchEvent(new MouseEvent('mousedown', { ...opts, buttons: 1 }));
+    await sleep(rand(40, 90));
+    el.dispatchEvent(new MouseEvent('mouseup',   opts));
+    el.dispatchEvent(new MouseEvent('click',     opts));
+    el.focus();
+    await sleep(rand(80, 160));
+  }
+
+  // ── Clear existing content ─────────────────────────────────────────────────
+
+  async function clearField(el) {
+    const { set } = getNativeAccessors(el);
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'a', code: 'KeyA', keyCode: 65, ctrlKey: true, bubbles: true }));
+    el.dispatchEvent(new KeyboardEvent('keyup',   { key: 'a', code: 'KeyA', keyCode: 65, ctrlKey: true, bubbles: true }));
+    await sleep(rand(40, 80));
+    el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Backspace', code: 'Backspace', keyCode: 8, bubbles: true }));
+    if (set) set.call(el, ''); else el.value = '';
+    el.dispatchEvent(new InputEvent('input', { inputType: 'deleteContentBackward', bubbles: true }));
+    el.dispatchEvent(new KeyboardEvent('keyup', { key: 'Backspace', code: 'Backspace', keyCode: 8, bubbles: true }));
+    await sleep(rand(60, 120));
+  }
+
+  // ── Type one character with full realistic event sequence ──────────────────
+
+  async function typeChar(el, char) {
+    const p  = keyProps(char);
+    const ac = getNativeAccessors(el);
+
+    el.dispatchEvent(new KeyboardEvent('keydown',  { ...p, bubbles: true, cancelable: true }));
+    el.dispatchEvent(new KeyboardEvent('keypress', { ...p, bubbles: true, cancelable: true }));
+
+    // Append via native setter so React / Alpine / Vue state stays in sync
+    const cur = ac.get ? ac.get.call(el) : el.value;
+    if (ac.set) ac.set.call(el, cur + char); else el.value = cur + char;
+
+    el.dispatchEvent(new InputEvent('input', {
+      inputType: 'insertText', data: char, bubbles: true, cancelable: true
+    }));
+    el.dispatchEvent(new KeyboardEvent('keyup', { ...p, bubbles: true, cancelable: true }));
+
+    // Human keystroke interval: 60–150 ms, occasional longer pause
+    await sleep(Math.random() < 0.1 ? rand(200, 400) : rand(60, 150));
+  }
+
+  // ── Set entire value at once (for sites whose keydown handlers conflict) ─────
+
+  async function instantFill(el, text) {
+    await humanFocus(el);
+    await clearField(el);
+    await sleep(rand(100, 200));
+
+    const { set } = getNativeAccessors(el);
+    if (set) set.call(el, text); else el.value = text;
+
+    el.dispatchEvent(new InputEvent('input',  { inputType: 'insertFromPaste', data: text, bubbles: true, cancelable: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+    await sleep(rand(80, 150));
+    console.log('[ShippingTracker] Instant-filled "%s" on %s', text, hostname);
+  }
+
+  // ── Type whole string (char-by-char default, or instant for problem sites) ──
+
+  async function humanType(el, text) {
+    if (config.typeMethod === 'instant') {
+      await instantFill(el, text);
+      return;
+    }
+    await humanFocus(el);
+    await clearField(el);
+    for (const ch of text) await typeChar(el, ch);
+    console.log('[ShippingTracker] Typed "%s" on %s', text, hostname);
+  }
+
+  // ── Submit helpers ─────────────────────────────────────────────────────────
+
+  async function humanClick(el) {
+    const rect = el.getBoundingClientRect();
+    const cx   = rect.left + rect.width  / 2 + rand(-4, 4);
+    const cy   = rect.top  + rect.height / 2 + rand(-3, 3);
+    const opts = { bubbles: true, cancelable: true, clientX: cx, clientY: cy };
+    el.dispatchEvent(new MouseEvent('mouseover', opts));
+    await sleep(rand(50, 120));
+    el.dispatchEvent(new MouseEvent('mousedown', { ...opts, buttons: 1 }));
+    await sleep(rand(40, 90));
+    el.dispatchEvent(new MouseEvent('mouseup',   opts));
+    // Native .click() reliably fires inline onclick handlers (e.g. Wan Hai's
+    // JSF jsf.util.chain) across machines where a synthetic click event was
+    // intermittently missed. Fall back to a synthetic click only if unavailable.
+    if (typeof el.click === 'function') el.click();
+    else el.dispatchEvent(new MouseEvent('click', opts));
+  }
+
+  async function pressEnter(el) {
+    const p = { key: 'Enter', code: 'Enter', keyCode: 13, which: 13, charCode: 13 };
+    el.dispatchEvent(new KeyboardEvent('keydown',  { ...p, bubbles: true, cancelable: true }));
+    await sleep(rand(40, 80));
+    el.dispatchEvent(new KeyboardEvent('keypress', { ...p, bubbles: true, cancelable: true }));
+    await sleep(rand(30, 60));
+    el.dispatchEvent(new KeyboardEvent('keyup',    { ...p, bubbles: true, cancelable: true }));
+    console.log('[ShippingTracker] Pressed Enter on %s', hostname);
+  }
+
+  async function submitForm(filledEl) {
+    await sleep(rand(300, 600)); // natural pause before submitting
+
+    if (config.submitMethod === 'enter') {
+      await pressEnter(filledEl);
+      return 'enter';
+    }
+
+    if (config.submitMethod === 'request-submit') {
+      const form = filledEl.closest('form');
+      if (form) {
+        // Wait for Alpine.js to enable the submit button before submitting
+        const btn = document.querySelector(config.submitSelectors[0]);
+        if (btn) {
+          for (let i = 0; i < 8 && btn.disabled; i++) await sleep(150);
+        }
+        try {
+          form.requestSubmit();
+          console.log('[ShippingTracker] form.requestSubmit() → Alpine @submit.prevent="search"');
+        } catch {
+          form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+        }
+        return 'request-submit';
+      }
+    }
+
+    // Try carrier-specific submit buttons. Retry over several seconds: on slower
+    // machines the button can render/lay-out slightly after the input is filled,
+    // so a single attempt would miss it and the click would never land.
+    const SUBMIT_RETRIES = 12; // ~12 × 300 ms ≈ 3.6 s
+    for (let attempt = 0; attempt < SUBMIT_RETRIES; attempt++) {
+      for (const sel of config.submitSelectors) {
+        try {
+          const btn = document.querySelector(sel);
+          if (!btn) continue;
+          // Skip only if truly not rendered yet (gives it another retry).
+          if (btn.offsetParent === null && btn.getBoundingClientRect().width === 0) continue;
+          // Wait up to 1 s for framework to enable the button
+          for (let i = 0; i < 7 && btn.disabled; i++) await sleep(150);
+          if (btn.disabled) { btn.disabled = false; btn.removeAttribute('disabled'); }
+          await humanClick(btn);
+          console.log('[ShippingTracker] Clicked submit via: %s (attempt %d)', sel, attempt + 1);
+          return 'click:' + sel;
+        } catch {}
+      }
+      await sleep(300); // button not ready yet — wait and retry
+    }
+    console.warn('[ShippingTracker] Submit button never became clickable on %s', hostname);
+
+    // Fallback: find submit button in the same form
+    const form = filledEl.closest('form');
+    if (form) {
+      const btn = form.querySelector('button[type="submit"], input[type="submit"], a[onclick]');
+      if (btn) { await humanClick(btn); return 'click:form-fallback'; }
+      form.submit();
+      return 'form-submit';
+    }
+
+    await pressEnter(filledEl);
+    return 'enter-fallback';
+  }
+
+  // ── Cookie / consent banner dismissal ─────────────────────────────────────
+
+  const CONSENT_SELECTORS = [
+    // Carrier-specific override
+    ...(config.consentSelectors ?? []),
+    // Generic patterns
+    'button.I-agree', 'button.i-agree',
+    'button[class*="agree" i]',
+    'button[id*="agree" i]',
+    'a[class*="agree" i]',
+    'input[value*="agree" i]',
+    'button[class*="accept" i]',
+    'button[id*="accept" i]',
+    'a[class*="accept" i]',
+    'button[class*="consent" i]',
+    'button[id*="consent" i]',
+  ];
+
+  async function dismissConsentBanner() {
+    // Also match buttons/links whose visible text contains agree/accept
+    const textMatch = [...document.querySelectorAll('button, a, input[type="button"], input[type="submit"]')]
+      .find(el => /^\s*(i\s+)?agree\s*$|^\s*accept(\s+all)?\s*$/i.test(el.textContent?.trim() ?? el.value ?? ''));
+
+    const el = CONSENT_SELECTORS.map(s => document.querySelector(s)).find(Boolean) ?? textMatch ?? null;
+
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+
+    await humanClick(el);
+    console.log('[ShippingTracker] Dismissed consent banner on %s', hostname);
+    await sleep(rand(400, 700)); // let the banner animate away
+  }
+
+  // ── Main: find input → type → submit ──────────────────────────────────────
+
+  let busy = false;
+
+  async function tryFill() {
+    if (busy) return null;
+    for (const sel of config.inputSelectors) {
+      try {
+        const el = document.querySelector(sel);
+        if (!el || el.disabled || el.readOnly) continue;
+        if (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') continue;
+        const r = el.getBoundingClientRect();
+        if (r.width === 0 || r.height === 0) continue;
+
+        busy = true;
+        await humanType(el, bookingNo);
+        const submit = await submitForm(el);
+        return { ok: true, stage: 'submitted', inputSelector: sel, submit };
+      } catch {}
+    }
+    return null;
+  }
+
+  // Optional per-carrier delay before first attempt (e.g. SPA needing extra init time)
+  if (config.initialDelay) await sleep(config.initialDelay);
+
+  await dismissConsentBanner();
+
+  const first = await tryFill();
+  if (first) return first;
+
+  // SPA fallback: watch for dynamic content and retry up to 15 s
+  return new Promise((resolve) => {
+    let spaAttempts = 0;
+    const observer = new MutationObserver(async () => {
+      if (busy) return;
+      await dismissConsentBanner();
+      const r = await tryFill();
+      if (r) {
+        observer.disconnect();
+        resolve(r);
+      } else if (++spaAttempts >= 40) {
+        observer.disconnect();
+        resolve({ ok: false, stage: 'no-input' }); // likely Cloudflare / wrong page
+      }
+    });
+    observer.observe(document.body ?? document.documentElement, { childList: true, subtree: true });
+    setTimeout(() => {
+      observer.disconnect();
+      resolve({ ok: false, stage: 'no-input' }); // 15 s timeout — no input found
+    }, 15_000);
+  });
+}

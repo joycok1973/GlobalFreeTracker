@@ -1,0 +1,178 @@
+// ── Load carrier configs and fill engine ─────────────────────────────────────
+importScripts(
+  'carriers/_registry.js',
+  'carriers/one-line.js',
+  'carriers/msc.js',
+  'carriers/oocl.js',
+  'carriers/track-trace.js',
+  'carriers/evergreen.js',
+  'carriers/cma-cgm.js',
+  'carriers/maersk.js',
+  'carriers/hmm.js',
+  'carriers/hapag-lloyd.js',
+  'carriers/cosco.js',
+  'carriers/vanguard.js',
+  'carriers/wan-hai.js',
+  'carriers/yang-ming.js',
+  'carriers/emirates.js',
+  'carriers/zim.js',
+  'carriers/sm-line.js',
+  'carriers/hede-hk.js',
+  'carriers/pil.js',
+  'carriers/sea-lead.js',
+  'carriers/seth-shipping.js',
+  'engine/fill-engine.js'
+);
+
+// ── Build lookup tables after all carrier files are loaded ────────────────────
+// PREFIX_TO_CONFIG : first-4-chars of MBLNO → carrier config
+// HOSTNAME_TO_CONFIG: hostname → carrier config (used after tab loads)
+const PREFIX_TO_CONFIG   = {};
+const HOSTNAME_TO_CONFIG = {};
+
+for (const cfg of Object.values(CARRIER_CONFIGS)) {
+  if (cfg.hostname) HOSTNAME_TO_CONFIG[cfg.hostname] = cfg;
+  for (const prefix of (cfg.prefixes ?? [])) {
+    PREFIX_TO_CONFIG[prefix.toUpperCase()] = cfg;
+  }
+}
+
+// tabId -> { bookingNo, hostname, attempts, createdAt }
+const pendingFills = new Map();
+
+const MAX_ATTEMPTS = 15;
+const MAX_AGE_MS   = 10 * 60 * 1000; // 10 minutes
+
+// Strip non-serialisable fields (functions) before passing as executeScript arg
+function toInjectableConfig(cfg) {
+  if (!cfg) return null;
+  const { scrape, ...rest } = cfg;
+  return rest;
+}
+
+// ── Detect carrier from MBLNO prefix, fall back to Track-Trace ───────────────
+function resolveCarrier(bookingNo) {
+  const prefix = (bookingNo ?? '').trim().substring(0, 4).toUpperCase();
+  return PREFIX_TO_CONFIG[prefix] ?? CARRIER_CONFIGS['TRTR'];
+}
+
+// ── Shared: open carrier tab and queue form fill ─────────────────────────────
+function openTracking(bookingNo, sendResponse) {
+  const carrier = resolveCarrier(bookingNo);
+  console.log('[ShippingTracker] Detected carrier: %s for MBLNO: %s', carrier.scac, bookingNo);
+
+  // Strip the 4-letter prefix if the carrier's search doesn't use it (e.g. ONE Line)
+  const searchBookingNo = carrier.stripPrefix ? bookingNo.substring(4) : bookingNo;
+
+  // Resolve final URL — use urlTemplate if the carrier supports it
+  const finalUrl = (carrier.urlTemplate && searchBookingNo)
+    ? carrier.urlTemplate.replace('{bookingNo}', encodeURIComponent(searchBookingNo))
+    : carrier.url;
+
+  // For URL-template carriers the BL is already in the URL — no form filling needed
+  const finalBookingNo = carrier.urlTemplate ? '' : searchBookingNo;
+
+  chrome.tabs.create({ url: finalUrl, active: true }, (tab) => {
+    if (finalBookingNo && tab.id != null) {
+      pendingFills.set(tab.id, {
+        bookingNo:  finalBookingNo,
+        hostname:   carrier.hostname,
+        attempts:   0,
+        injected:   false,
+        createdAt:  Date.now()
+      });
+    }
+    if (sendResponse) sendResponse({ success: true, tabId: tab.id, carrier: carrier.scac });
+  });
+}
+
+// ── Register context menu on install / update ─────────────────────────────────
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id:       'track-shipment',
+    title:    'Track Shipment: "%s"',
+    contexts: ['selection']
+  });
+});
+
+// ── Context menu click — selected text on any page ────────────────────────────
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId !== 'track-shipment') return;
+  const bookingNo = (info.selectionText ?? '').trim().toUpperCase();
+  if (bookingNo) openTracking(bookingNo, null);
+});
+
+// ── Message from content-script ──────────────────────────────────────────────
+chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+  if (message.action !== 'OPEN_SHIPPING_URL') return;
+
+  const bookingNo = (message.bookingNo ?? '').trim();
+
+  if (!bookingNo) {
+    sendResponse({ success: false, error: 'Missing booking number' });
+    return;
+  }
+
+  openTracking(bookingNo, sendResponse);
+  return true; // keep channel open for async sendResponse
+});
+
+// ── Shared injection logic ────────────────────────────────────────────────────
+function attemptFill(tabId) {
+  if (!pendingFills.has(tabId)) return;
+
+  const entry = pendingFills.get(tabId);
+
+  if (entry.attempts >= MAX_ATTEMPTS || Date.now() - entry.createdAt > MAX_AGE_MS) {
+    console.warn('[ShippingTracker] Giving up on tab %d after %d attempts', tabId, entry.attempts);
+    pendingFills.delete(tabId);
+    return;
+  }
+
+  entry.attempts++;
+  entry.injected = true;
+
+  const carrierConfig = toInjectableConfig(HOSTNAME_TO_CONFIG[entry.hostname]);
+
+  chrome.scripting.executeScript({
+    target: { tabId },
+    func:   fillBookingNumber,
+    args:   [entry.bookingNo, entry.hostname, carrierConfig]
+  }).then(results => {
+    const result = results?.[0]?.result;
+    const filled = result?.ok === true;
+    if (filled) {
+      console.log('[ShippingTracker] Fill succeeded on tab %d (attempt %d): submit=%s', tabId, entry.attempts, result.submit);
+      pendingFills.delete(tabId);
+    } else {
+      console.log('[ShippingTracker] Fill not done on tab %d (attempt %d), waiting for next load…', tabId, entry.attempts);
+    }
+  }).catch(err => {
+    console.error('[ShippingTracker] Script injection failed (attempt %d):', entry.attempts, err);
+  });
+}
+
+// ── Inject as soon as DOM is ready (placeholder visible) ─────────────────────
+chrome.webNavigation.onDOMContentLoaded.addListener(({ tabId, frameId }) => {
+  if (frameId !== 0) return; // main frame only
+  attemptFill(tabId);
+});
+
+// ── Fallback: retry on full load if DOM-ready injection didn't resolve it ─────
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== 'complete') return;
+  if (!pendingFills.has(tabId)) return;
+
+  const entry = pendingFills.get(tabId);
+  if (entry.injected) return; // already handled by webNavigation listener
+
+  attemptFill(tabId);
+});
+
+// ── Clean up when user closes the tab ────────────────────────────────────────
+chrome.tabs.onRemoved.addListener((tabId) => {
+  if (pendingFills.has(tabId)) {
+    console.log('[ShippingTracker] Tab %d closed — removing pending fill', tabId);
+    pendingFills.delete(tabId);
+  }
+});

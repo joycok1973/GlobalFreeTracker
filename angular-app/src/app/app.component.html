@@ -1,0 +1,61 @@
+<div class="card">
+  <div class="card-header">
+    <div class="icon-wrap">🚢</div>
+    <h1>Shipping Tracker</h1>
+    <p class="subtitle">Enter your MBLNO to open the carrier tracking portal</p>
+  </div>
+
+  <div class="card-body">
+    <label class="field-label" for="mblno-input">Master Bill of Lading Number</label>
+    <div class="input-wrapper">
+      <input
+        id="mblno-input"
+        type="text"
+        [(ngModel)]="mblno"
+        (input)="mblno = mblno.toUpperCase()"
+        class="text-input"
+        placeholder="e.g. MSCUXO992739"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      @if (mblno) {
+        <button class="clear-btn" (click)="mblno = ''" title="Clear">✕</button>
+      }
+    </div>
+
+    <div class="test-list">
+      <span class="test-list-label">Quick Test</span>
+      <div class="test-select-row">
+        <select class="carrier-select" (change)="onCarrierSelect($event)">
+          <option value="">— Select a carrier —</option>
+          @for (item of testCarriers; track item.carrier; let i = $index) {
+            <option [value]="i">{{ item.carrier }}</option>
+          }
+        </select>
+        @if (selectedCarrier) {
+          <span class="test-blno">{{ selectedCarrier.blno }}</span>
+        }
+      </div>
+    </div>
+
+    <button
+      class="open-btn"
+      [class.disabled]="!mblno"
+      [disabled]="!mblno"
+      (click)="openInExtension()"
+    >
+      <span class="btn-icon">↗</span>
+      Open &amp; Track
+    </button>
+
+    @if (statusMessage) {
+      <div class="status-banner" [class.success]="statusType === 'success'" [class.error]="statusType === 'error'">
+        {{ statusType === 'success' ? '✓' : '✕' }} {{ statusMessage }}
+      </div>
+    }
+  </div>
+
+  <div class="card-footer">
+    <span>Powered by Chrome Extension + Angular</span>
+  </div>
+</div>
