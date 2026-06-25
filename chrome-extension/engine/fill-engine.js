@@ -1,7 +1,8 @@
 // ── Injected into the carrier page (must be self-contained) ──────────────────
-// Invoked via: chrome.scripting.executeScript({ func: fillBookingNumber, args: [bookingNo, hostname, config] })
+// Invoked via: chrome.scripting.executeScript({ func: fillBookingNumber, args: [bookingNo, hostname, config, searchType] })
 // Returns true if the BL number was typed and submitted, false if no input was found (e.g. Cloudflare page).
-async function fillBookingNumber(bookingNo, hostname, config) {
+// searchType ('container' | 'bl') picks the carrier's search-category dropdown before typing.
+async function fillBookingNumber(bookingNo, hostname, config, searchType) {
 
   config = config ?? {
     inputSelectors: ['input[type="search"]', 'input[type="text"]:not([type="hidden"])'],
@@ -239,12 +240,59 @@ async function fillBookingNumber(bookingNo, hostname, config) {
     await sleep(rand(400, 700)); // let the banner animate away
   }
 
+  // ── Search-category dropdown (e.g. ONE's "BL No." vs "Container No.") ───────
+  // Returns true when the desired category is set (or nothing to do), false when
+  // the control isn't ready yet so the caller can retry on the next SPA mutation.
+
+  async function selectSearchType(wantedKey) {
+    const st = config.searchType;
+    if (!st) return true;                                   // carrier has no such dropdown
+    const label = (st.labels ?? {})[wantedKey];
+    if (!label) return true;                                // unknown category — leave default
+
+    const trigger = document.querySelector(st.triggerSelector || 'button[aria-haspopup="listbox"]');
+    if (!trigger || trigger.getBoundingClientRect().width === 0) return false; // not rendered yet
+
+    const labelLc = label.trim().toLowerCase();
+    if ((trigger.textContent || '').trim().toLowerCase() === labelLc) return true; // already selected
+
+    // Open the listbox (Headless UI renders options only while expanded)
+    if (trigger.getAttribute('aria-expanded') !== 'true') {
+      await humanClick(trigger);
+      await sleep(rand(200, 350));
+    }
+
+    // Pick the option whose visible text matches the wanted label
+    let opt = null;
+    for (let i = 0; i < 12 && !opt; i++) {
+      opt = [...document.querySelectorAll(st.optionSelector || '[role="option"]')]
+        .find(o => (o.textContent || '').trim().toLowerCase() === labelLc);
+      if (!opt) await sleep(120);
+    }
+    if (!opt) return false;
+
+    await humanClick(opt);
+    await sleep(rand(250, 400));
+    const ok = (trigger.textContent || '').trim().toLowerCase() === labelLc;
+    if (ok) console.log('[ShippingTracker] Search type set to "%s" on %s', label, hostname);
+    return ok;
+  }
+
   // ── Main: find input → type → submit ──────────────────────────────────────
 
   let busy = false;
+  let searchTypeReady = !config.searchType; // nothing to gate on if carrier lacks the dropdown
 
   async function tryFill() {
     if (busy) return null;
+    busy = true;
+
+    // Set the search category (BL vs Container) before filling the input
+    if (!searchTypeReady) {
+      searchTypeReady = await selectSearchType(searchType);
+      if (!searchTypeReady) { busy = false; return null; } // retry on next mutation
+    }
+
     for (const sel of config.inputSelectors) {
       try {
         const el = document.querySelector(sel);
@@ -253,12 +301,12 @@ async function fillBookingNumber(bookingNo, hostname, config) {
         const r = el.getBoundingClientRect();
         if (r.width === 0 || r.height === 0) continue;
 
-        busy = true;
         await humanType(el, bookingNo);
         const submit = await submitForm(el);
         return { ok: true, stage: 'submitted', inputSelector: sel, submit };
       } catch {}
     }
+    busy = false; // no input found this round — allow the SPA observer to retry
     return null;
   }
 

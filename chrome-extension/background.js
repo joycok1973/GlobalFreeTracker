@@ -56,13 +56,27 @@ function resolveCarrier(bookingNo) {
   return PREFIX_TO_CONFIG[prefix] ?? CARRIER_CONFIGS['TRTR'];
 }
 
+// ── Distinguish a container number from a BL / booking number ────────────────
+// ISO 6346 container no.: 3-letter owner code + equipment category (U/J/Z) +
+// 6-digit serial + 1 check digit, e.g. "ONEU1234567" or "TGHU 123456 7".
+// Everything else (BL, booking, purchase order) is treated as 'bl'.
+const CONTAINER_RE = /^[A-Z]{3}[UJZ]\d{7}$/;
+function classifyQuery(value) {
+  const normalized = (value ?? '').toUpperCase().replace(/[\s-]/g, '');
+  return CONTAINER_RE.test(normalized) ? 'container' : 'bl';
+}
+
 // ── Shared: open carrier tab and queue form fill ─────────────────────────────
 function openTracking(bookingNo, sendResponse) {
   const carrier = resolveCarrier(bookingNo);
-  console.log('[ShippingTracker] Detected carrier: %s for MBLNO: %s', carrier.scac, bookingNo);
+  const searchType = classifyQuery(bookingNo); // 'container' | 'bl'
+  console.log('[ShippingTracker] Detected carrier: %s (%s) for: %s', carrier.scac, searchType, bookingNo);
 
-  // Strip the 4-letter prefix if the carrier's search doesn't use it (e.g. ONE Line)
-  const searchBookingNo = carrier.stripPrefix ? bookingNo.substring(4) : bookingNo;
+  // A container number must be searched whole (prefix included); only BL / booking
+  // numbers get the 4-letter prefix stripped for carriers like ONE Line.
+  const searchBookingNo = searchType === 'container'
+    ? bookingNo.toUpperCase().replace(/[\s-]/g, '')
+    : (carrier.stripPrefix ? bookingNo.substring(4) : bookingNo);
 
   // Resolve final URL — use urlTemplate if the carrier supports it
   const finalUrl = (carrier.urlTemplate && searchBookingNo)
@@ -77,6 +91,7 @@ function openTracking(bookingNo, sendResponse) {
       pendingFills.set(tab.id, {
         bookingNo:  finalBookingNo,
         hostname:   carrier.hostname,
+        searchType: searchType,
         attempts:   0,
         injected:   false,
         createdAt:  Date.now()
@@ -137,7 +152,7 @@ function attemptFill(tabId) {
   chrome.scripting.executeScript({
     target: { tabId },
     func:   fillBookingNumber,
-    args:   [entry.bookingNo, entry.hostname, carrierConfig]
+    args:   [entry.bookingNo, entry.hostname, carrierConfig, entry.searchType]
   }).then(results => {
     const result = results?.[0]?.result;
     const filled = result?.ok === true;
