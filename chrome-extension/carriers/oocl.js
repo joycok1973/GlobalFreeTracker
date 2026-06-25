@@ -16,13 +16,12 @@ CARRIER_CONFIGS['OOLU'] = {
   submitMethod: 'click',
 
   // OOCL is tricky: the search-type dropdown (#ooclCargoSelector, wrapper
-  // .cargoTrackingDropDrown) only appears ~1s AFTER a number is typed, and selecting a
-  // category clears the input. Flow (afterInput): type the number -> wait 1s -> if the
-  // dropdown is shown, pick the category -> re-enter the number -> click search.
-  // Options: "B/L #" (bl) · "Booking #" (booking) · "Container #" (cont).
+  // .cargoTrackingDropDrown) only appears a moment AFTER a number is typed, and
+  // selecting a category clears the input. Flow (afterInput): type the number -> wait
+  // until the dropdown is displayed -> pick the category -> re-enter the number ->
+  // click search. Options: "B/L #" (bl) · "Booking #" (booking) · "Container #" (cont).
   searchType: {
     afterInput:      true,
-    afterInputDelay: 1000,   // wait 1s after typing for the dropdown to render
     triggerSelector: '.cargoTrackingDropDrown button.dropdown-toggle', // bootstrap-select button
     optionSelector:  '.cargoTrackingDropDrown .dropdown-menu li a',    // option links (<span class="text">)
     labels: {

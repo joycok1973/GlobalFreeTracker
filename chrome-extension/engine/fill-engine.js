@@ -244,8 +244,8 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   // Works with both a Headless-UI listbox (ONE) and a bootstrap-select dropdown
   // (OOCL). Returns true when the desired category is set (or nothing to do),
   // false when the control isn't ready so the caller can retry.
-  //   opts.wait — poll for the trigger to appear (some sites render it only after
-  //               the number is typed).
+  //   opts.wait — poll until the trigger is displayed (some sites render it only
+  //               after the number is typed); up to ~5 s, then give up.
 
   async function selectSearchType(wantedKey, opts = {}) {
     const st = config.searchType;
@@ -258,13 +258,14 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     // Match on startsWith so a config label of "Container" matches a rendered
     // option/label like "Container #" or "Container No.".
     const matches = el => (el?.textContent || '').trim().toLowerCase().startsWith(labelLc);
+    const visible = el => !!el && el.getBoundingClientRect().width > 0;
 
-    // Locate the trigger, optionally waiting for it to render
+    // Locate the trigger, optionally waiting until it is actually displayed
     let trigger = document.querySelector(triggerSel);
-    if (!trigger && opts.wait) {
-      for (let i = 0; i < 20 && !trigger; i++) { await sleep(200); trigger = document.querySelector(triggerSel); }
+    if (opts.wait) {
+      for (let i = 0; i < 25 && !visible(trigger); i++) { await sleep(200); trigger = document.querySelector(triggerSel); }
     }
-    if (!trigger || trigger.getBoundingClientRect().width === 0) return false; // not rendered yet
+    if (!visible(trigger)) return false;                    // dropdown not displayed
 
     if (matches(trigger)) return true;                      // already selected
 
@@ -318,12 +319,11 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
         await humanType(el, bookingNo);
 
         // Post-fill case (OOCL — tricky): after typing, the type dropdown renders.
-        // Wait for it, and if it's displayed select the right category. Selecting an
+        // Wait until it is displayed, then select the right category. Selecting an
         // option clears the input, so re-enter the number. Best-effort: if the
         // dropdown never shows, the typed value stays and we just submit.
         if (afterInput) {
-          await sleep(config.searchType.afterInputDelay ?? 1000); // wait for the dropdown
-          const set = await selectSearchType(searchType);          // false if not displayed
+          const set = await selectSearchType(searchType, { wait: true }); // waits until displayed
           if (set) {
             await sleep(rand(150, 300));                           // let the input clear settle
             const again = document.querySelector(sel) || el;       // selecting may re-render
