@@ -14,8 +14,22 @@ CARRIER_CONFIGS['OOLU'] = {
   ],
   submitSelectors: ['#container_btn', 'a.btn-red[onclick*="ListeningCargoTrackingBtn"]'],
   submitMethod: 'click',
-  // OOCL handles the number itself — just type it and click search; no search-type
-  // dropdown selection needed. (FFAU and other container codes still route here.)
+
+  // OOCL is tricky: the search-type dropdown (#ooclCargoSelector, wrapper
+  // .cargoTrackingDropDrown) only appears ~1s AFTER a number is typed, and selecting a
+  // category clears the input. Flow (afterInput): type the number -> wait 1s -> if the
+  // dropdown is shown, pick the category -> re-enter the number -> click search.
+  // Options: "B/L #" (bl) · "Booking #" (booking) · "Container #" (cont).
+  searchType: {
+    afterInput:      true,
+    afterInputDelay: 1000,   // wait 1s after typing for the dropdown to render
+    triggerSelector: '.cargoTrackingDropDrown button.dropdown-toggle', // bootstrap-select button
+    optionSelector:  '.cargoTrackingDropDrown .dropdown-menu li a',    // option links (<span class="text">)
+    labels: {
+      container: 'Container',   // -> "Container #"
+      bl:        'B/L'          // -> "B/L #"  (OOLU + 8-12 digits)
+    }
+  },
 
   scrape() {
     // TODO: extract tracking results from OOCL page
