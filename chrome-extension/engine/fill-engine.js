@@ -346,6 +346,13 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     return null;
   }
 
+  // Wait for the page to load completely if the carrier needs it (e.g. OOCL, whose
+  // input + bootstrap-select dropdown are only initialized once the page has fully
+  // loaded). The extension injects on DOMContentLoaded, which can be earlier.
+  if (config.waitForLoad) {
+    for (let i = 0; i < 75 && document.readyState !== 'complete'; i++) await sleep(200); // up to ~15s
+  }
+
   // Optional per-carrier delay before first attempt (e.g. SPA needing extra init time)
   if (config.initialDelay) await sleep(config.initialDelay);
 
