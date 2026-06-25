@@ -242,22 +242,28 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
 
   // ── Search-category dropdown (e.g. ONE's "BL No." vs "Container No.") ───────
   // Works with both a Headless-UI listbox (ONE) and a bootstrap-select dropdown
-  // (OOCL). Returns true when the desired category is set (or nothing to do),
-  // false when the control isn't ready so the caller can retry.
+  // (OOCL). The current value is read from the live control, so it copes with a
+  // non-deterministic default (OOCL remembers the last-used type).
+  // Returns: 'unchanged' (already the wanted type), 'changed' (an option was
+  // clicked — which clears OOCL's input), or false (not displayed / not found).
   //   opts.wait — poll until the trigger is displayed (some sites render it only
   //               after the number is typed); up to ~5 s, then give up.
 
   async function selectSearchType(wantedKey, opts = {}) {
     const st = config.searchType;
-    if (!st) return true;                                   // carrier has no such dropdown
+    if (!st) return 'unchanged';                            // carrier has no such dropdown
     const label = (st.labels ?? {})[wantedKey];
-    if (!label) return true;                                // category not configured — leave default
+    if (!label) return 'unchanged';                         // category not configured — leave default
 
     const triggerSel = st.triggerSelector || 'button[aria-haspopup="listbox"]';
     const labelLc    = label.trim().toLowerCase();
     // Match on startsWith so a config label of "Container" matches a rendered
-    // option/label like "Container #" or "Container No.".
-    const matches = el => (el?.textContent || '').trim().toLowerCase().startsWith(labelLc);
+    // option/label like "Container #" or "Container No.". Check both the visible
+    // text and the title attribute (OOCL's bootstrap-select button carries the
+    // current value in title="Container #" as well as in its .filter-option span).
+    const norm    = s => (s || '').trim().toLowerCase();
+    const matches = el => norm(el?.textContent).startsWith(labelLc)
+                       || norm(el?.getAttribute?.('title')).startsWith(labelLc);
     const visible = el => !!el && el.getBoundingClientRect().width > 0;
 
     // Locate the trigger, optionally waiting until it is actually displayed
@@ -267,7 +273,7 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     }
     if (!visible(trigger)) return false;                    // dropdown not displayed
 
-    if (matches(trigger)) return true;                      // already selected
+    if (matches(trigger)) return 'unchanged';               // default is already the wanted type
 
     // Open the menu (both widgets render/enable options once expanded)
     if (trigger.getAttribute('aria-expanded') !== 'true') {
@@ -285,9 +291,9 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
 
     await humanClick(opt);
     await sleep(rand(250, 400));
-    const ok = matches(document.querySelector(triggerSel));
-    if (ok) console.log('[ShippingTracker] Search type set to "%s" on %s', label, hostname);
-    return ok;
+    if (!matches(document.querySelector(triggerSel))) return false;
+    console.log('[ShippingTracker] Search type set to "%s" on %s', label, hostname);
+    return 'changed';
   }
 
   // ── Main: find input → type → submit ──────────────────────────────────────
@@ -319,12 +325,13 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
         await humanType(el, bookingNo);
 
         // Post-fill case (OOCL — tricky): after typing, the type dropdown renders.
-        // Wait until it is displayed, then select the right category. Selecting an
-        // option clears the input, so re-enter the number. Best-effort: if the
-        // dropdown never shows, the typed value stays and we just submit.
+        // Wait until it is displayed, then select the right category. The default is
+        // non-deterministic, so only re-enter the number when an option was actually
+        // clicked ('changed') — that's what clears the input. If it was already the
+        // wanted type ('unchanged') or never showed (false), the typed value stays.
         if (afterInput) {
-          const set = await selectSearchType(searchType, { wait: true }); // waits until displayed
-          if (set) {
+          const result = await selectSearchType(searchType, { wait: true }); // waits until displayed
+          if (result === 'changed') {
             await sleep(rand(150, 300));                           // let the input clear settle
             const again = document.querySelector(sel) || el;       // selecting may re-render
             await humanType(again, bookingNo);                     // enter the value again
