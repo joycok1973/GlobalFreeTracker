@@ -2,7 +2,7 @@
 CARRIER_CONFIGS['OOLU'] = {
   scac:     'OOLU',
   prefixes:    ['OOLU', 'OOCL'],
-  containerPrefixes: ['OOLU', 'OOCU'],
+  containerPrefixes: ['OOLU', 'OOCU', 'FFAU'], // FFAU = Florens (COSCO/OOCL group leasing arm)
   stripPrefix: false,
   hostname: 'www.oocl.com',
   url:      'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx',
@@ -14,6 +14,20 @@ CARRIER_CONFIGS['OOLU'] = {
   ],
   submitSelectors: ['#container_btn', 'a.btn-red[onclick*="ListeningCargoTrackingBtn"]'],
   submitMethod: 'click',
+
+  // OOCL's search-type selector is a bootstrap-select dropdown (default "Booking #")
+  // that renders after the number is entered, so it's set post-fill (afterInput).
+  // Both categories are set explicitly because OOCL's own auto-detect mis-reads a
+  // Bill of Lading number (OOLU + 8-12 digits, e.g. OOLU2327208850) as a container.
+  searchType: {
+    afterInput:      true,
+    triggerSelector: '.bootstrap-select button.dropdown-toggle', // bootstrap-select button (shows .filter-option)
+    optionSelector:  '.bootstrap-select .dropdown-menu li a',    // bootstrap-select option links
+    labels: {
+      container: 'Container',       // ISO 6346 number (OOLU + 7 digits) -> "Container #"
+      bl:        'Bill of Lading'   // OOLU + 8-12 digits -> "Bill of Lading #"
+    }
+  },
 
   scrape() {
     // TODO: extract tracking results from OOCL page

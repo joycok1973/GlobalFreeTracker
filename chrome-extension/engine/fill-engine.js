@@ -241,22 +241,34 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   }
 
   // ── Search-category dropdown (e.g. ONE's "BL No." vs "Container No.") ───────
-  // Returns true when the desired category is set (or nothing to do), false when
-  // the control isn't ready yet so the caller can retry on the next SPA mutation.
+  // Works with both a Headless-UI listbox (ONE) and a bootstrap-select dropdown
+  // (OOCL). Returns true when the desired category is set (or nothing to do),
+  // false when the control isn't ready so the caller can retry.
+  //   opts.wait — poll for the trigger to appear (some sites render it only after
+  //               the number is typed).
 
-  async function selectSearchType(wantedKey) {
+  async function selectSearchType(wantedKey, opts = {}) {
     const st = config.searchType;
     if (!st) return true;                                   // carrier has no such dropdown
     const label = (st.labels ?? {})[wantedKey];
-    if (!label) return true;                                // unknown category — leave default
+    if (!label) return true;                                // category not configured — leave default
 
-    const trigger = document.querySelector(st.triggerSelector || 'button[aria-haspopup="listbox"]');
+    const triggerSel = st.triggerSelector || 'button[aria-haspopup="listbox"]';
+    const labelLc    = label.trim().toLowerCase();
+    // Match on startsWith so a config label of "Container" matches a rendered
+    // option/label like "Container #" or "Container No.".
+    const matches = el => (el?.textContent || '').trim().toLowerCase().startsWith(labelLc);
+
+    // Locate the trigger, optionally waiting for it to render
+    let trigger = document.querySelector(triggerSel);
+    if (!trigger && opts.wait) {
+      for (let i = 0; i < 20 && !trigger; i++) { await sleep(200); trigger = document.querySelector(triggerSel); }
+    }
     if (!trigger || trigger.getBoundingClientRect().width === 0) return false; // not rendered yet
 
-    const labelLc = label.trim().toLowerCase();
-    if ((trigger.textContent || '').trim().toLowerCase() === labelLc) return true; // already selected
+    if (matches(trigger)) return true;                      // already selected
 
-    // Open the listbox (Headless UI renders options only while expanded)
+    // Open the menu (both widgets render/enable options once expanded)
     if (trigger.getAttribute('aria-expanded') !== 'true') {
       await humanClick(trigger);
       await sleep(rand(200, 350));
@@ -265,15 +277,14 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     // Pick the option whose visible text matches the wanted label
     let opt = null;
     for (let i = 0; i < 12 && !opt; i++) {
-      opt = [...document.querySelectorAll(st.optionSelector || '[role="option"]')]
-        .find(o => (o.textContent || '').trim().toLowerCase() === labelLc);
+      opt = [...document.querySelectorAll(st.optionSelector || '[role="option"]')].find(matches);
       if (!opt) await sleep(120);
     }
     if (!opt) return false;
 
     await humanClick(opt);
     await sleep(rand(250, 400));
-    const ok = (trigger.textContent || '').trim().toLowerCase() === labelLc;
+    const ok = matches(document.querySelector(triggerSel));
     if (ok) console.log('[ShippingTracker] Search type set to "%s" on %s', label, hostname);
     return ok;
   }
@@ -281,13 +292,16 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   // ── Main: find input → type → submit ──────────────────────────────────────
 
   let busy = false;
-  let searchTypeReady = !config.searchType; // nothing to gate on if carrier lacks the dropdown
+  // Carriers whose type dropdown only appears after the number is typed (OOCL)
+  // set searchType.afterInput; those are handled post-fill, not as a pre-fill gate.
+  const afterInput = !!config.searchType?.afterInput;
+  let searchTypeReady = !config.searchType || afterInput;
 
   async function tryFill() {
     if (busy) return null;
     busy = true;
 
-    // Set the search category (BL vs Container) before filling the input
+    // Pre-fill case (ONE): set the search category before filling the input
     if (!searchTypeReady) {
       searchTypeReady = await selectSearchType(searchType);
       if (!searchTypeReady) { busy = false; return null; } // retry on next mutation
@@ -302,6 +316,12 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
         if (r.width === 0 || r.height === 0) continue;
 
         await humanType(el, bookingNo);
+
+        // Post-fill case (OOCL): the type dropdown renders after input — set it
+        // now. Best-effort: if it can't be set, still submit so the basic search
+        // isn't blocked.
+        if (afterInput) await selectSearchType(searchType, { wait: true });
+
         const submit = await submitForm(el);
         return { ok: true, stage: 'submitted', inputSelector: sel, submit };
       } catch {}
