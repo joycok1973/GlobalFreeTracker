@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['HDMU'] = {
   scac:     'HDMU',
   prefixes:    ['HDMU', 'HYDA'],
+  containerPrefixes: ['HDMU', 'HMMU'],
   stripPrefix: false,
   hostname: 'www.hmm21.com',
   url:      'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do',

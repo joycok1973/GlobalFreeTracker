@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['HLCU'] = {
   scac:     'HLCU',
   prefixes:    ['HLCU', 'HLXU'],
+  containerPrefixes: ['HLBU', 'HLXU', 'HPLU', 'HLCU', 'UACU'], // UACU = legacy UASC
   stripPrefix: false,
   hostname: 'www.hapag-lloyd.com',
   url:      'https://www.hapag-lloyd.com/en/home.html',

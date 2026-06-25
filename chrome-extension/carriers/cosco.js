@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['COSU'] = {
   scac:        'COSU',
   prefixes:    ['COSU', 'COSE'],
+  containerPrefixes: ['COSU', 'CBHU', 'CCLU', 'CSNU', 'CSLU', 'CBXU'],
   stripPrefix: true,
   hostname:    'elines.coscoshipping.com',
   url:         'https://elines.coscoshipping.com/ebusiness/cargoTracking',

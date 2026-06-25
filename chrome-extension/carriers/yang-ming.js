@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['YMLU'] = {
   scac:     'YMLU',
   prefixes:    ['YMLU', 'YMJA'],
+  containerPrefixes: ['YMLU', 'YMMU'],
   stripPrefix: false,
   hostname: 'www.yangming.com',
   url:      'https://www.yangming.com/en/esolution/cargo_tracking',
