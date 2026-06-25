@@ -25,15 +25,23 @@ importScripts(
 );
 
 // ── Build lookup tables after all carrier files are loaded ────────────────────
-// PREFIX_TO_CONFIG : first-4-chars of MBLNO → carrier config
-// HOSTNAME_TO_CONFIG: hostname → carrier config (used after tab loads)
-const PREFIX_TO_CONFIG   = {};
-const HOSTNAME_TO_CONFIG = {};
+// MBL numbers and container numbers live in different namespaces, so each gets
+// its own prefix → carrier map:
+//   MBL_PREFIX_TO_CONFIG       : 4-char BL / booking prefix → carrier (1:1)
+//   CONTAINER_PREFIX_TO_CONFIG : 4-char container owner code → carrier (many codes;
+//                                only carrier-owned codes are registered here)
+//   HOSTNAME_TO_CONFIG         : hostname → carrier config (used after tab loads)
+const MBL_PREFIX_TO_CONFIG       = {};
+const CONTAINER_PREFIX_TO_CONFIG = {};
+const HOSTNAME_TO_CONFIG         = {};
 
 for (const cfg of Object.values(CARRIER_CONFIGS)) {
   if (cfg.hostname) HOSTNAME_TO_CONFIG[cfg.hostname] = cfg;
   for (const prefix of (cfg.prefixes ?? [])) {
-    PREFIX_TO_CONFIG[prefix.toUpperCase()] = cfg;
+    MBL_PREFIX_TO_CONFIG[prefix.toUpperCase()] = cfg;
+  }
+  for (const prefix of (cfg.containerPrefixes ?? [])) {
+    CONTAINER_PREFIX_TO_CONFIG[prefix.toUpperCase()] = cfg;
   }
 }
 
@@ -50,12 +58,6 @@ function toInjectableConfig(cfg) {
   return rest;
 }
 
-// ── Detect carrier from MBLNO prefix, fall back to Track-Trace ───────────────
-function resolveCarrier(bookingNo) {
-  const prefix = (bookingNo ?? '').trim().substring(0, 4).toUpperCase();
-  return PREFIX_TO_CONFIG[prefix] ?? CARRIER_CONFIGS['TRTR'];
-}
-
 // ── Distinguish a container number from a BL / booking number ────────────────
 // ISO 6346 container no.: 3-letter owner code + equipment category (U/J/Z) +
 // 6-digit serial + 1 check digit, e.g. "ONEU1234567" or "TGHU 123456 7".
@@ -66,10 +68,37 @@ function classifyQuery(value) {
   return CONTAINER_RE.test(normalized) ? 'container' : 'bl';
 }
 
+// ── Carrier resolution — separate strategies for MBL vs container ─────────────
+// MBL / booking: the 4-letter prefix maps 1:1 to a carrier, so a direct lookup
+// in the BL namespace is authoritative.
+function resolveCarrierByMbl(value) {
+  const prefix = (value ?? '').trim().substring(0, 4).toUpperCase();
+  return MBL_PREFIX_TO_CONFIG[prefix] ?? CARRIER_CONFIGS['TRTR'];
+}
+
+// Container: the owner code namespace is large and includes leased codes
+// (TGHU, CAIU, FCIU, …) that belong to no single carrier. Try the dedicated
+// container map first; fall back to the BL map for carrier-owned codes that also
+// serve as a BL prefix (e.g. MSC's MEDU); otherwise hand off to the Track-Trace
+// aggregator, which can identify the carrier from the box number itself.
+function resolveCarrierByContainer(value) {
+  const prefix = (value ?? '').trim().substring(0, 4).toUpperCase();
+  return CONTAINER_PREFIX_TO_CONFIG[prefix]
+      ?? MBL_PREFIX_TO_CONFIG[prefix]
+      ?? CARRIER_CONFIGS['TRTR'];
+}
+
+// Dispatch to the right resolver based on the detected query type.
+function resolveCarrier(value, queryType) {
+  return queryType === 'container'
+    ? resolveCarrierByContainer(value)
+    : resolveCarrierByMbl(value);
+}
+
 // ── Shared: open carrier tab and queue form fill ─────────────────────────────
 function openTracking(bookingNo, sendResponse) {
-  const carrier = resolveCarrier(bookingNo);
-  const searchType = classifyQuery(bookingNo); // 'container' | 'bl'
+  const searchType = classifyQuery(bookingNo);          // 'container' | 'bl'
+  const carrier    = resolveCarrier(bookingNo, searchType);
   console.log('[ShippingTracker] Detected carrier: %s (%s) for: %s', carrier.scac, searchType, bookingNo);
 
   // A container number must be searched whole (prefix included); only BL / booking

@@ -1,7 +1,8 @@
 // ONE Line (Ocean Network Express)
 CARRIER_CONFIGS['ONEY'] = {
   scac:     'ONEY',
-  prefixes:     ['ONEY', 'ONEU'],
+  prefixes:          ['ONEY'],   // BL / booking prefix (mapped via the MBL resolver)
+  containerPrefixes: ['ONEU'],   // ONE-owned container codes (mapped via the container resolver)
   stripPrefix:  true,   // ONE Line search uses the BL number without the ONEY prefix
   hostname: 'ecomm.one-line.com',
   url:      'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking',
