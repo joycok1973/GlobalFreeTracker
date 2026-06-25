@@ -16,13 +16,14 @@ CARRIER_CONFIGS['OOLU'] = {
   submitMethod: 'click',
 
   // OOCL's search-type selector is a bootstrap-select dropdown (#ooclCargoSelector,
-  // wrapper class .cargoTrackingDropDrown). Selecting an option CLEARS the input, so
-  // the category must be set BEFORE the number is typed (pre-fill) — clearing an empty
-  // box is harmless, and the number typed afterwards survives.
+  // wrapper class .cargoTrackingDropDrown). It only appears after a number is entered,
+  // and selecting a category clears the input. So the flow is afterInput: type the
+  // number -> pick the category -> re-type the number -> submit (handled by the engine).
   // Both categories are set explicitly because OOCL's own auto-detect mis-reads a Bill
   // of Lading number (OOLU + 8-12 digits, e.g. OOLU2327208850) as a container.
   // Options: "B/L #" (bl) · "Booking #" (booking) · "Container #" (cont).
   searchType: {
+    afterInput:      true,
     triggerSelector: '.cargoTrackingDropDrown button.dropdown-toggle', // bootstrap-select button
     optionSelector:  '.cargoTrackingDropDrown .dropdown-menu li a',    // option links (<span class="text">)
     labels: {

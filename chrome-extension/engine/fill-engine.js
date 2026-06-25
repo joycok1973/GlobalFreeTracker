@@ -301,9 +301,7 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     if (busy) return null;
     busy = true;
 
-    // Pre-fill case (ONE, OOCL): set the search category before filling the input.
-    // Wait for the control to render — OOCL's bootstrap-select inits via JS after
-    // load, and selecting a type there clears the input, so it must precede typing.
+    // Pre-fill case (ONE): set the search category before filling the input.
     if (!searchTypeReady) {
       searchTypeReady = await selectSearchType(searchType, { wait: true });
       if (!searchTypeReady) { busy = false; return null; } // retry on next mutation
@@ -319,12 +317,20 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
 
         await humanType(el, bookingNo);
 
-        // Post-fill case (OOCL): the type dropdown renders after input — set it
-        // now. Best-effort: if it can't be set, still submit so the basic search
-        // isn't blocked.
-        if (afterInput) await selectSearchType(searchType, { wait: true });
+        // Post-fill case (OOCL): the type dropdown only appears once a number has
+        // been entered, and choosing a category clears the input. So: set the type,
+        // then re-enter the number before submitting. Best-effort — if the dropdown
+        // can't be set, the original value is left in place and we still submit.
+        if (afterInput) {
+          const set = await selectSearchType(searchType, { wait: true });
+          if (set) {
+            await sleep(rand(150, 300));                 // let the input clear settle
+            const again = document.querySelector(sel) || el; // selecting may re-render
+            await humanType(again, bookingNo);
+          }
+        }
 
-        const submit = await submitForm(el);
+        const submit = await submitForm(document.querySelector(sel) || el);
         return { ok: true, stage: 'submitted', inputSelector: sel, submit };
       } catch {}
     }
