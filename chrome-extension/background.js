@@ -210,13 +210,23 @@ chrome.webNavigation.onDOMContentLoaded.addListener(({ tabId, frameId }) => {
   attemptFill(tabId);
 });
 
+// A new top-level navigation in a pending tab (e.g. OOCL's bot-check / "verify you are
+// human" page → the real tracking page after the user passes it) clears the injected
+// flag, so the next 'complete' re-injects and the fill is retried on the real page.
+// We do NOT attempt the verification itself — the user completes that.
+chrome.webNavigation.onCommitted.addListener(({ tabId, frameId }) => {
+  if (frameId !== 0) return; // main frame only
+  const entry = pendingFills.get(tabId);
+  if (entry) entry.injected = false;
+});
+
 // ── Inject on full load — primary for injectOnComplete carriers, fallback for the rest ─
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status !== 'complete') return;
   if (!pendingFills.has(tabId)) return;
 
   const entry = pendingFills.get(tabId);
-  if (entry.injected) return; // already handled by the DOMContentLoaded listener
+  if (entry.injected) return; // already injected for this page load
 
   attemptFill(tabId);
 });
