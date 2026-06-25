@@ -15,17 +15,19 @@ CARRIER_CONFIGS['OOLU'] = {
   submitSelectors: ['#container_btn', 'a.btn-red[onclick*="ListeningCargoTrackingBtn"]'],
   submitMethod: 'click',
 
-  // OOCL's search-type selector is a bootstrap-select dropdown (default "Booking #")
-  // that renders after the number is entered, so it's set post-fill (afterInput).
-  // Both categories are set explicitly because OOCL's own auto-detect mis-reads a
-  // Bill of Lading number (OOLU + 8-12 digits, e.g. OOLU2327208850) as a container.
+  // OOCL's search-type selector is a bootstrap-select dropdown (#ooclCargoSelector,
+  // wrapper class .cargoTrackingDropDrown) that renders after the page loads, so it's
+  // set post-fill (afterInput). Both categories are set explicitly because OOCL's own
+  // auto-detect mis-reads a Bill of Lading number (OOLU + 8-12 digits, e.g.
+  // OOLU2327208850) as a container.
+  // Options: "B/L #" (bl) · "Booking #" (booking) · "Container #" (cont).
   searchType: {
     afterInput:      true,
-    triggerSelector: '.bootstrap-select button.dropdown-toggle', // bootstrap-select button (shows .filter-option)
-    optionSelector:  '.bootstrap-select .dropdown-menu li a',    // bootstrap-select option links
+    triggerSelector: '.cargoTrackingDropDrown button.dropdown-toggle', // bootstrap-select button
+    optionSelector:  '.cargoTrackingDropDrown .dropdown-menu li a',    // option links (<span class="text">)
     labels: {
-      container: 'Container',       // ISO 6346 number (OOLU + 7 digits) -> "Container #"
-      bl:        'Bill of Lading'   // OOLU + 8-12 digits -> "Bill of Lading #"
+      container: 'Container',   // -> "Container #"
+      bl:        'B/L'          // -> "B/L #"  (OOLU + 8-12 digits)
     }
   },
 
