@@ -4,7 +4,6 @@ CARRIER_CONFIGS['OOLU'] = {
   prefixes:    ['OOLU', 'OOCL'],
   containerPrefixes: ['OOLU', 'OOCU', 'FFAU'], // FFAU = Florens (COSCO/OOCL group leasing arm)
   stripPrefix: false,
-  openOnly: true,   // TEMP DIAGNOSTIC: just open the OOCL page, inject nothing (revert after testing)
   hostname: 'www.oocl.com',
   url:      'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx',
   inputSelectors: [
@@ -15,6 +14,11 @@ CARRIER_CONFIGS['OOLU'] = {
   ],
   submitSelectors: ['#container_btn', 'a.btn-red[onclick*="ListeningCargoTrackingBtn"]'],
   submitMethod: 'click',
+  // #SEARCH_NUMBER is a filter/autocomplete box that fires per-keystroke logic
+  // (often a network request). Char-by-char typing triggers it ~11x per entry (and we
+  // enter twice), which kept the tab spinner busy. Instant fill sets the value in one
+  // shot, so OOCL's autocomplete fires at most once.
+  typeMethod: 'instant',
 
   // OOCL is tricky: the search-type dropdown (#ooclCargoSelector, wrapper
   // .cargoTrackingDropDrown) only appears a moment AFTER a number is typed, and
