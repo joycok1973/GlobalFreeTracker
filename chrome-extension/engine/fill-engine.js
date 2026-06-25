@@ -301,9 +301,11 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     if (busy) return null;
     busy = true;
 
-    // Pre-fill case (ONE): set the search category before filling the input
+    // Pre-fill case (ONE, OOCL): set the search category before filling the input.
+    // Wait for the control to render — OOCL's bootstrap-select inits via JS after
+    // load, and selecting a type there clears the input, so it must precede typing.
     if (!searchTypeReady) {
-      searchTypeReady = await selectSearchType(searchType);
+      searchTypeReady = await selectSearchType(searchType, { wait: true });
       if (!searchTypeReady) { busy = false; return null; } // retry on next mutation
     }
 
