@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['SMLU'] = {
   scac:        'SMLU',
   prefixes:    ['SMLM'],
+  containerPrefixes: ['SMLU'],
   stripPrefix: true,   // SM Line search does not use the prefix
   hostname:    'esvc.smlines.com',
   url:         'https://esvc.smlines.com/smline/CUP_HOM_3301.do',

@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['EMIU'] = {
   scac:     'EMIU',
   prefixes:    ['EMIV', 'EMIU', 'ESPU'],
+  containerPrefixes: ['ESPU', 'EMKU', 'EMIU'],
   stripPrefix: false,
   hostname: 'www.emiratesline.com',
   url:      'https://www.emiratesline.com/track/',

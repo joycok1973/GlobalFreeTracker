@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['CMDU'] = {
   scac:     'CMDU',
   prefixes:    ['CMDU', 'CGMU'],
+  containerPrefixes: ['CMAU', 'CGMU', 'CMCU', 'ECMU', 'APLU', 'APRU', 'APHU', 'ANLU', 'CNCU'], // incl. APL / ANL / CNC
   stripPrefix: true,
   hostname: 'www.cma-cgm.com',
   url:      'https://www.cma-cgm.com/ebusiness/tracking',

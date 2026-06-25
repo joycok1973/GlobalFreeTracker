@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['MSCU'] = {
   scac:     'MSCU',
   prefixes:    ['MSCU', 'MEDU', 'MSCW'],
+  containerPrefixes: ['MSCU', 'MEDU', 'MSDU', 'MSMU', 'MSNU'],
   stripPrefix: false,
   hostname: 'www.msc.com',
   url:      'https://www.msc.com/en/track-a-shipment',

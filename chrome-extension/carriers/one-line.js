@@ -2,7 +2,8 @@
 CARRIER_CONFIGS['ONEY'] = {
   scac:     'ONEY',
   prefixes:          ['ONEY'],   // BL / booking prefix (mapped via the MBL resolver)
-  containerPrefixes: ['ONEU'],   // ONE-owned container codes (mapped via the container resolver)
+  // ONE-owned container codes + inherited NYK / MOL / "K" Line fleets (mapped via the container resolver)
+  containerPrefixes: ['ONEU', 'NYKU', 'MOLU', 'MOAU', 'KKLU', 'KKFU'],
   stripPrefix:  true,   // ONE Line search uses the BL number without the ONEY prefix
   hostname: 'ecomm.one-line.com',
   url:      'https://ecomm.one-line.com/one-ecom/manage-shipment/cargo-tracking',

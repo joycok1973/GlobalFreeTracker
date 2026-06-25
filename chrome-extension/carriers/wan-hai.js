@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['WHLC'] = {
   scac:     'WHLC',
   prefixes:    ['WHLC'],
+  containerPrefixes: ['WHLU', 'WHSU'],
   stripPrefix: true,
   hostname: 'www.wanhai.com',
   url:      'https://www.wanhai.com/views/cargo_track_v2/tracking_query.xhtml',
