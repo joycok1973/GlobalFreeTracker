@@ -116,7 +116,10 @@ function openTracking(bookingNo, sendResponse) {
   const finalBookingNo = carrier.urlTemplate ? '' : searchBookingNo;
 
   chrome.tabs.create({ url: finalUrl, active: true }, (tab) => {
-    if (finalBookingNo && tab.id != null) {
+    if (carrier.openOnly) {
+      // DIAGNOSTIC: open the tab but inject nothing, to compare raw page load speed.
+      console.log('[ShippingTracker] openOnly: opened %s without filling (diagnostic)', carrier.scac);
+    } else if (finalBookingNo && tab.id != null) {
       pendingFills.set(tab.id, {
         bookingNo:  finalBookingNo,
         hostname:   carrier.hostname,
