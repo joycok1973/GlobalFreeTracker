@@ -4,6 +4,10 @@ CARRIER_CONFIGS['OOLU'] = {
   prefixes:    ['OOLU', 'OOCL'],
   containerPrefixes: ['OOLU', 'OOCU', 'FFAU'], // FFAU = Florens (COSCO/OOCL group leasing arm)
   stripPrefix: false,
+  // The extension injects on DOMContentLoaded, which can run before OOCL's own
+  // scripts finish initializing the input + bootstrap-select dropdown. Pause first
+  // so the page is as ready as it is on a normal manual visit.
+  initialDelay: 2000,
   hostname: 'www.oocl.com',
   url:      'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx',
   inputSelectors: [
