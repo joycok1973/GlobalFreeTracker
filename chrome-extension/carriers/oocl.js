@@ -17,14 +17,15 @@ CARRIER_CONFIGS['OOLU'] = {
 
   // OOCL's search-type selector is a bootstrap-select dropdown (default "Booking #")
   // that renders after the number is entered, so it's set post-fill (afterInput).
-  // Only the container category is configured — BL/booking searches leave the
-  // dropdown at its default so a booking number isn't forced to "Bill of Lading".
+  // Both categories are set explicitly because OOCL's own auto-detect mis-reads a
+  // Bill of Lading number (OOLU + 8-12 digits, e.g. OOLU2327208850) as a container.
   searchType: {
     afterInput:      true,
     triggerSelector: '.bootstrap-select button.dropdown-toggle', // bootstrap-select button (shows .filter-option)
     optionSelector:  '.bootstrap-select .dropdown-menu li a',    // bootstrap-select option links
     labels: {
-      container: 'Container'   // matches the "Container #" option
+      container: 'Container',       // ISO 6346 number (OOLU + 7 digits) -> "Container #"
+      bl:        'Bill of Lading'   // OOLU + 8-12 digits -> "Bill of Lading #"
     }
   },
 
