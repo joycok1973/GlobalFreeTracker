@@ -28,7 +28,24 @@
       "PowerShell(cd \"E:\\\\python\\\\shipment-tracking\\\\angular-app\"; node node_modules/@angular/cli/bin/ng.js serve --port 4200 2>&1 &)",
       "PowerShell(cd \"E:\\\\python\\\\shipment-tracking\\\\angular-app\"; Start-Process -NoNewWindow -FilePath \"node\" -ArgumentList \"node_modules/@angular/cli/bin/ng.js\", \"serve\", \"--port\", \"4200\" -RedirectStandardOutput \"$env:TEMP\\\\ng-serve.log\" -RedirectStandardError \"$env:TEMP\\\\ng-serve-err.log\"; Start-Sleep -Seconds 10; Get-Content \"$env:TEMP\\\\ng-serve.log\", \"$env:TEMP\\\\ng-serve-err.log\" | Select-Object -Last 10)",
       "Bash(dir /s /b)",
-      "Bash(findstr /v node_modules)"
+      "Bash(findstr /v node_modules)",
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "mcp__Claude_in_Chrome__switch_browser",
+      "mcp__Claude_in_Chrome__select_browser",
+      "mcp__Claude_in_Chrome__browser_batch",
+      "mcp__Claude_in_Chrome__computer",
+      "mcp__Claude_in_Chrome__find",
+      "mcp__Claude_in_Chrome__read_page",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(node -e ' *)",
+      "WebFetch(domain:tracecontainer.com)",
+      "WebFetch(domain:cnemstracking.com)",
+      "WebFetch(domain:cargoenter.com)",
+      "WebFetch(domain:www.pier2pier.com)",
+      "WebFetch(domain:www.msc.com)",
+      "Bash(git merge --no-ff feature/container-search-type -m ' *)"
     ]
   }
 }
