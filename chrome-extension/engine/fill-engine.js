@@ -346,14 +346,10 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     return null;
   }
 
-  // Wait for the page to load completely if the carrier needs it (e.g. OOCL, whose
-  // input + bootstrap-select dropdown are only initialized once the page has fully
-  // loaded). The extension injects on DOMContentLoaded, which can be earlier.
-  if (config.waitForLoad) {
-    for (let i = 0; i < 75 && document.readyState !== 'complete'; i++) await sleep(200); // up to ~15s
-  }
-
-  // Optional per-carrier delay before first attempt (e.g. SPA needing extra init time)
+  // Optional per-carrier delay before first attempt (e.g. SPA needing extra init time).
+  // Note: we intentionally do NOT wait for document.readyState === 'complete' — that
+  // blocks on slow trailing resources (ads/analytics) and can delay the search by many
+  // seconds. We wait only for the elements we need, via the polls below.
   if (config.initialDelay) await sleep(config.initialDelay);
 
   await dismissConsentBanner();
@@ -361,25 +357,38 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   const first = await tryFill();
   if (first) return first;
 
-  // SPA fallback: watch for dynamic content and retry up to 15 s
+  // SPA fallback: watch for dynamic content and retry up to 15 s.
+  // The callback is debounced and non-reentrant: a busy page (e.g. OOCL) can fire
+  // hundreds of mutations during load, and each attempt does full-document scans
+  // (dismissConsentBanner / input lookup). Running those on every mutation would
+  // saturate the page's main thread and make it load far slower, so coalesce bursts
+  // of mutations into at most one attempt per ~400 ms.
   return new Promise((resolve) => {
     let spaAttempts = 0;
-    const observer = new MutationObserver(async () => {
-      if (busy) return;
-      await dismissConsentBanner();
-      const r = await tryFill();
-      if (r) {
-        observer.disconnect();
-        resolve(r);
-      } else if (++spaAttempts >= 40) {
-        observer.disconnect();
-        resolve({ ok: false, stage: 'no-input' }); // likely Cloudflare / wrong page
+    let scheduled = false;
+    let running = false;
+
+    const finish = (result) => { observer.disconnect(); clearTimeout(timer); resolve(result); };
+
+    async function attempt() {
+      if (running || busy) return;
+      running = true;
+      try {
+        await dismissConsentBanner();
+        const r = await tryFill();
+        if (r) return finish(r);
+        if (++spaAttempts >= 40) return finish({ ok: false, stage: 'no-input' });
+      } finally {
+        running = false;
       }
+    }
+
+    const observer = new MutationObserver(() => {
+      if (scheduled) return;
+      scheduled = true;
+      setTimeout(() => { scheduled = false; attempt(); }, 400); // debounce mutation bursts
     });
     observer.observe(document.body ?? document.documentElement, { childList: true, subtree: true });
-    setTimeout(() => {
-      observer.disconnect();
-      resolve({ ok: false, stage: 'no-input' }); // 15 s timeout — no input found
-    }, 15_000);
+    const timer = setTimeout(() => finish({ ok: false, stage: 'no-input' }), 15_000); // overall cap
   });
 }

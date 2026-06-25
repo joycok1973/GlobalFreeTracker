@@ -4,10 +4,6 @@ CARRIER_CONFIGS['OOLU'] = {
   prefixes:    ['OOLU', 'OOCL'],
   containerPrefixes: ['OOLU', 'OOCU', 'FFAU'], // FFAU = Florens (COSCO/OOCL group leasing arm)
   stripPrefix: false,
-  // Wait for the page to load completely before filling — OOCL's input and
-  // bootstrap-select dropdown are only initialized once the page has fully loaded
-  // (the extension injects on DOMContentLoaded, which is earlier).
-  waitForLoad: true,
   hostname: 'www.oocl.com',
   url:      'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx',
   inputSelectors: [
