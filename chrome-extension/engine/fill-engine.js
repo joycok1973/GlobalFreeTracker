@@ -338,7 +338,11 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
           }
         }
 
-        const submit = await submitForm(document.querySelector(sel) || el);
+        // DIAGNOSTIC: config.skipSubmit fills the form but does not click search,
+        // to isolate whether the slowness is the search/results load vs our fill.
+        const submit = config.skipSubmit
+          ? 'skipped(diagnostic)'
+          : await submitForm(document.querySelector(sel) || el);
         return { ok: true, stage: 'submitted', inputSelector: sel, submit };
       } catch {}
     }
