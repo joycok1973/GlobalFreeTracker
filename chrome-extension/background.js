@@ -200,18 +200,23 @@ function attemptFill(tabId) {
 }
 
 // ── Inject as soon as DOM is ready (placeholder visible) ─────────────────────
+// Carriers with injectOnComplete (e.g. OOCL) are skipped here and injected only
+// once the page has fully loaded (spinner stopped), so our script never competes
+// with the page's own loading.
 chrome.webNavigation.onDOMContentLoaded.addListener(({ tabId, frameId }) => {
   if (frameId !== 0) return; // main frame only
+  const entry = pendingFills.get(tabId);
+  if (entry && HOSTNAME_TO_CONFIG[entry.hostname]?.injectOnComplete) return; // wait for load complete
   attemptFill(tabId);
 });
 
-// ── Fallback: retry on full load if DOM-ready injection didn't resolve it ─────
+// ── Inject on full load — primary for injectOnComplete carriers, fallback for the rest ─
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status !== 'complete') return;
   if (!pendingFills.has(tabId)) return;
 
   const entry = pendingFills.get(tabId);
-  if (entry.injected) return; // already handled by webNavigation listener
+  if (entry.injected) return; // already handled by the DOMContentLoaded listener
 
   attemptFill(tabId);
 });
