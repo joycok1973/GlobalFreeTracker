@@ -361,6 +361,13 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   const first = await tryFill();
   if (first) return first;
 
+  // injectOnComplete carriers (e.g. OOCL) run only after the page has fully loaded, so
+  // the search form should already be present. If the first attempt found nothing, this
+  // is a different page — typically OOCL's "verify you are human" interstitial. Stay
+  // hands-off: don't scan/observe it; bail now and let the next navigation (after the
+  // user completes the check and OOCL redirects to the tracking page) re-inject.
+  if (config.injectOnComplete) return { ok: false, stage: 'no-input' };
+
   // SPA fallback: watch for dynamic content and retry up to 15 s.
   // The callback is debounced and non-reentrant: a busy page (e.g. OOCL) can fire
   // hundreds of mutations during load, and each attempt does full-document scans
