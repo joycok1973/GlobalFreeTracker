@@ -2,7 +2,7 @@
 CARRIER_CONFIGS['OOLU'] = {
   scac:     'OOLU',
   prefixes:    ['OOLU', 'OOCL'],
-  containerPrefixes: ['OOLU', 'OOCU'],
+  containerPrefixes: ['OOLU', 'OOCU', 'FFAU'], // FFAU = Florens (COSCO/OOCL group leasing arm)
   stripPrefix: false,
   hostname: 'www.oocl.com',
   url:      'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx',
