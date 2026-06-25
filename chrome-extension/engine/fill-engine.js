@@ -292,13 +292,16 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   // ── Main: find input → type → submit ──────────────────────────────────────
 
   let busy = false;
-  let searchTypeReady = !config.searchType; // carriers without a type dropdown skip this
+  // afterInput carriers (OOCL): the type dropdown only appears once a number is typed,
+  // so it's handled post-fill rather than as a pre-fill gate.
+  const afterInput = !!config.searchType?.afterInput;
+  let searchTypeReady = !config.searchType || afterInput;
 
   async function tryFill() {
     if (busy) return null;
     busy = true;
 
-    // Set the search category (e.g. ONE's BL vs Container) before filling the input.
+    // Pre-fill case (ONE): set the search category before filling the input.
     if (!searchTypeReady) {
       searchTypeReady = await selectSearchType(searchType, { wait: true });
       if (!searchTypeReady) { busy = false; return null; } // retry on next mutation
@@ -313,7 +316,22 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
         if (r.width === 0 || r.height === 0) continue;
 
         await humanType(el, bookingNo);
-        const submit = await submitForm(el);
+
+        // Post-fill case (OOCL — tricky): after typing, the type dropdown renders.
+        // Wait for it, and if it's displayed select the right category. Selecting an
+        // option clears the input, so re-enter the number. Best-effort: if the
+        // dropdown never shows, the typed value stays and we just submit.
+        if (afterInput) {
+          await sleep(config.searchType.afterInputDelay ?? 1000); // wait for the dropdown
+          const set = await selectSearchType(searchType);          // false if not displayed
+          if (set) {
+            await sleep(rand(150, 300));                           // let the input clear settle
+            const again = document.querySelector(sel) || el;       // selecting may re-render
+            await humanType(again, bookingNo);                     // enter the value again
+          }
+        }
+
+        const submit = await submitForm(document.querySelector(sel) || el);
         return { ok: true, stage: 'submitted', inputSelector: sel, submit };
       } catch {}
     }
