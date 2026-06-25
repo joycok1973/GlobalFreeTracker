@@ -317,12 +317,12 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
 
         await humanType(el, bookingNo);
 
-        // Post-fill case (OOCL): the type dropdown only appears once a number has
-        // been entered, and choosing a category clears the input. So: set the type,
-        // then re-enter the number before submitting. Best-effort — if the dropdown
-        // can't be set, the original value is left in place and we still submit.
+        // Post-fill case (OOCL): the type dropdown appears as soon as a number is
+        // entered (no wait needed), and choosing a category clears the input. So: set
+        // the type, re-enter the number, then click search. Best-effort — if the
+        // dropdown can't be set, the original value is left in place and we still submit.
         if (afterInput) {
-          const set = await selectSearchType(searchType, { wait: true });
+          const set = await selectSearchType(searchType);
           if (set) {
             await sleep(rand(150, 300));                 // let the input clear settle
             const again = document.querySelector(sel) || el; // selecting may re-render
