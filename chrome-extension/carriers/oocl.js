@@ -4,6 +4,7 @@ CARRIER_CONFIGS['OOLU'] = {
   prefixes:    ['OOLU', 'OOCL'],
   containerPrefixes: ['OOLU', 'OOCU', 'FFAU'], // FFAU = Florens (COSCO/OOCL group leasing arm)
   stripPrefix: false,
+  skipSubmit: true,   // TEMP DIAGNOSTIC: fill the form but don't click search (revert after testing)
   hostname: 'www.oocl.com',
   url:      'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx',
   inputSelectors: [
