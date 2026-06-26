@@ -38,6 +38,7 @@ CARRIER_CONFIGS['HDMU'] = {
     'a[onclick*="track" i]'
   ],
   submitMethod: 'click',
+  typeMethod: 'instant',   // set the value directly instead of typing char-by-char
 
   scrape() {
     // TODO: extract tracking results from HMM page
