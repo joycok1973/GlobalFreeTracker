@@ -24,10 +24,10 @@
     </div>
 
     @if (detected) {
-      <div class="carrier-pill" [class.fallback]="detected.fallback">
+      <div class="carrier-pill">
         <span class="carrier-pill-logo">{{ detected.type === 'Container' ? '📦' : '📄' }}</span>
         <span class="carrier-pill-name">{{ detected.carrier.name }}</span>
-        <span class="carrier-pill-note">{{ detected.fallback ? 'auto-detect' : detected.type }}</span>
+        <span class="carrier-pill-note">{{ detected.type }}</span>
       </div>
     }
 

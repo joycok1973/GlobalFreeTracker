@@ -15,9 +15,8 @@ export class AppComponent implements OnInit {
   statusMessage = '';
   statusType: 'success' | 'error' | '' = '';
 
-  // Supported carriers (Track-Trace is the auto-detect fallback, not shown as a chip).
+  // Supported carriers (Track-Trace is just the extension's fallback — not shown here).
   readonly carriers = CARRIERS.filter(c => c.scac !== 'TRTR');
-  private readonly trackTrace = CARRIERS.find(c => c.scac === 'TRTR')!;
   private readonly CONTAINER_RE = /^[A-Z]{3}[UJZ]\d{7}$/;
 
   // Sample MBL/container per carrier (click a chip to fill it).
@@ -38,19 +37,17 @@ export class AppComponent implements OnInit {
   }
 
   // Auto-detect the carrier from the entered value — mirrors the extension's
-  // classifyQuery + resolveCarrier (container map → BL fallback → Track-Trace).
-  get detected(): { carrier: Carrier; type: 'Container' | 'B/L'; fallback: boolean } | null {
+  // classifyQuery + resolveCarrier (container map → BL fallback). Returns null when no
+  // carrier matches (we do NOT fall back to Track-Trace here).
+  get detected(): { carrier: Carrier; type: 'Container' | 'B/L' } | null {
     const v = this.mblno.trim().toUpperCase().replace(/[\s-]/g, '');
     if (!v) return null;
     const prefix = v.substring(0, 4);
     const isContainer = this.CONTAINER_RE.test(v);
-    const type: 'Container' | 'B/L' = isContainer ? 'Container' : 'B/L';
     const byMbl = this.carriers.find(c => c.prefixes.includes(prefix));
     const byCont = this.carriers.find(c => c.containerPrefixes.includes(prefix)) ?? byMbl;
     const carrier = isContainer ? byCont : byMbl;
-    return carrier
-      ? { carrier, type, fallback: false }
-      : { carrier: this.trackTrace, type, fallback: true };
+    return carrier ? { carrier, type: isContainer ? 'Container' : 'B/L' } : null;
   }
 
   fillSample(c: Carrier): void {
