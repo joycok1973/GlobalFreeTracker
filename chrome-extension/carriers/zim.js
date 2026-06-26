@@ -2,7 +2,7 @@
 CARRIER_CONFIGS['ZIMU'] = {
   scac:     'ZIMU',
   prefixes:    ['ZIMU'],
-  containerPrefixes: ['ZIMU', 'ZCSU'],
+  containerPrefixes: ['ZIMU', 'ZCSU', 'ZCLU', 'JXLU'],
   stripPrefix: false,
   hostname: 'www.zim.com',
   url:      'https://www.zim.com/tools/track-a-shipment',
