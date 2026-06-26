@@ -8,18 +8,10 @@
   <div class="card-body">
     <label class="field-label" for="mblno-input">MBL# / Container#</label>
     <div class="input-wrapper">
-      <input
-        id="mblno-input"
-        type="text"
-        [(ngModel)]="mblno"
-        (input)="mblno = mblno.toUpperCase()"
-        class="text-input"
-        placeholder="e.g. MEDUXO992739 (MBL) or MEDU1234567 (container)"
-        autocomplete="off"
-        spellcheck="false"
-      />
+      <input id="mblno-input" type="text" [(ngModel)]="mblno" (input)="mblno = mblno.toUpperCase()" class="text-input"
+        placeholder="e.g. MEDUX3434332739 " autocomplete="off" spellcheck="false" />
       @if (mblno) {
-        <button class="clear-btn" (click)="mblno = ''" title="Clear">✕</button>
+      <button class="clear-btn" (click)="mblno = ''" title="Clear">✕</button>
       }
     </div>
 
@@ -27,24 +19,19 @@
       <span class="carriers-label">Choose carrier <span class="carriers-hint">(click to track)</span></span>
       <div class="carriers-grid">
         @for (c of carriers; track c.scac) {
-          <button
-            type="button"
-            class="carrier-chip"
-            (click)="trackWithCarrier(c)"
-            [title]="c.scac"
-          >{{ c.name }}</button>
+        <button type="button" class="carrier-chip" (click)="trackWithCarrier(c)" [title]="c.scac">{{ c.name }}</button>
         }
       </div>
     </div>
 
     @if (statusMessage) {
-      <div class="status-banner" [class.success]="statusType === 'success'" [class.error]="statusType === 'error'">
-        {{ statusType === 'success' ? '✓' : '✕' }} {{ statusMessage }}
-      </div>
+    <div class="status-banner" [class.success]="statusType === 'success'" [class.error]="statusType === 'error'">
+      {{ statusType === 'success' ? '✓' : '✕' }} {{ statusMessage }}
+    </div>
     }
   </div>
 
   <div class="card-footer">
-    <span>Powered by Chrome Extension + Angular</span>
+    <span>Powered by Chrome Extension</span>
   </div>
 </div>
