@@ -15,55 +15,26 @@ export class AppComponent implements OnInit {
   statusMessage = '';
   statusType: 'success' | 'error' | '' = '';
 
-  // Supported carriers (Track-Trace is just the extension's fallback — not shown here).
+  // Carriers the user can pick from (Track-Trace is the extension's internal fallback).
   readonly carriers = CARRIERS.filter(c => c.scac !== 'TRTR');
-  private readonly CONTAINER_RE = /^[A-Z]{3}[UJZ]\d{7}$/;
-
-  // Sample MBL/container per carrier (click a chip to fill it).
-  private samples: Record<string, string> = {
-    ONEY: 'ONEYCOKG03088800', MSCU: 'MEDUXO992739',     OOLU: 'OOLU2327208850',
-    EGLV: 'EGLV103600018913', CMDU: 'CMDUAID0331341',   MAEU: 'MAEU271035183',
-    HDMU: 'HYDA20002400',     HLCU: 'HLCUBO12605ATNI7', COSU: 'COSU6500018730',
-    WHLC: 'WHLC113G000608',   YMLU: 'YMJAN502064474',   EMIU: 'EMIVINDAHD219708',
-    ZIMU: 'ZIMUTUT6037472',   SMLU: 'SMLMSZP6C4347700', HDUJ: 'HDUJSLA26LO00044',
-    PABV: 'PABVSHOL50301600', SJHH: 'SJHH3100124816',   SSPH: 'SSPHPKL8155012',
-    VSLG: 'VSLG321326000521',
-  };
 
   ngOnInit(): void {
-    // Optional ?refno=… in the URL pre-fills the input box (MBL or container).
+    // The extension opens this app with ?refno=… when it can't detect the carrier,
+    // pre-filling the number so the user only has to pick the carrier.
     const refno = new URLSearchParams(window.location.search).get('refno');
     if (refno) this.mblno = refno.trim().toUpperCase();
   }
 
-  // Auto-detect the carrier from the entered value — mirrors the extension's
-  // classifyQuery + resolveCarrier (container map → BL fallback). Returns null when no
-  // carrier matches (we do NOT fall back to Track-Trace here).
-  get detected(): { carrier: Carrier; type: 'Container' | 'B/L' } | null {
-    const v = this.mblno.trim().toUpperCase().replace(/[\s-]/g, '');
-    if (!v) return null;
-    const prefix = v.substring(0, 4);
-    const isContainer = this.CONTAINER_RE.test(v);
-    const byMbl = this.carriers.find(c => c.prefixes.includes(prefix));
-    const byCont = this.carriers.find(c => c.containerPrefixes.includes(prefix)) ?? byMbl;
-    const carrier = isContainer ? byCont : byMbl;
-    return carrier ? { carrier, type: isContainer ? 'Container' : 'B/L' } : null;
-  }
-
-  fillSample(c: Carrier): void {
-    this.mblno = this.samples[c.scac] ?? '';
-  }
-
-  openInExtension(): void {
+  // Clicking a carrier sends the number + that carrier's SCAC to the extension, which
+  // opens that carrier's tracking page (no auto-detection — the user chose).
+  trackWithCarrier(c: Carrier): void {
     const trackingNo = this.mblno.trim().toUpperCase();
     if (!trackingNo) {
-      this.showStatus('Please enter an MBL or Container number.', 'error');
+      this.showStatus('Enter an MBL or Container number first.', 'error');
       return;
     }
-    // Pass the number as-is — the extension classifies MBL vs container, identifies the
-    // carrier, and opens the correct tracking URL.
-    window.postMessage({ action: 'OPEN_SHIPPING_URL', bookingNo: trackingNo }, '*');
-    this.showStatus(`Tracking "${trackingNo}"…`, 'success');
+    window.postMessage({ action: 'OPEN_SHIPPING_URL', bookingNo: trackingNo, scac: c.scac }, '*');
+    this.showStatus(`Opening ${c.name}…`, 'success');
   }
 
   private showStatus(message: string, type: 'success' | 'error'): void {
