@@ -4,6 +4,9 @@ CARRIER_CONFIGS['CMDU'] = {
   prefixes:    ['CMDU', 'CGMU'],
   containerPrefixes: ['CMAU', 'CGMU', 'CMCU', 'ECMU', 'APLU', 'APRU', 'APHU', 'ANLU', 'CNCU'], // incl. APL / ANL / CNC
   stripPrefix: true,
+  // Inject only after the page has fully loaded (like OOCL/Evergreen) so our script
+  // doesn't compete with the page's own initialization.
+  injectOnComplete: true,
   hostname: 'www.cma-cgm.com',
   url:      'https://www.cma-cgm.com/ebusiness/tracking',
   inputSelectors: [
@@ -24,6 +27,7 @@ CARRIER_CONFIGS['CMDU'] = {
     'button.o-button.primary[type="submit"]'
   ],
   submitMethod: 'click',
+  typeMethod: 'instant',   // set the value directly instead of typing char-by-char
 
   scrape() {
     // TODO: extract tracking results from CMA CGM page
