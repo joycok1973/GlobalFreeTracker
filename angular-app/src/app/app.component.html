@@ -2,11 +2,11 @@
   <div class="card-header">
     <div class="icon-wrap">🚢</div>
     <h1>Shipping Tracker</h1>
-    <p class="subtitle">Enter your MBLNO to open the carrier tracking portal</p>
+    <p class="subtitle">Enter an MBL <em>or</em> Container number to open the carrier tracking portal</p>
   </div>
 
   <div class="card-body">
-    <label class="field-label" for="mblno-input">Master Bill of Lading Number</label>
+    <label class="field-label" for="mblno-input">MBL or Container Number</label>
     <div class="input-wrapper">
       <input
         id="mblno-input"
@@ -14,7 +14,7 @@
         [(ngModel)]="mblno"
         (input)="mblno = mblno.toUpperCase()"
         class="text-input"
-        placeholder="e.g. MSCUXO992739"
+        placeholder="e.g. MEDUXO992739 (MBL) or MEDU1234567 (container)"
         autocomplete="off"
         spellcheck="false"
       />

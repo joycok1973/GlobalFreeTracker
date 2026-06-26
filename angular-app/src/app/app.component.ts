@@ -45,14 +45,15 @@ export class AppComponent {
   }
 
   openInExtension(): void {
-    const mblno = this.mblno.trim().toUpperCase();
-    if (!mblno) {
-      this.showStatus('Please enter a MBLNO.', 'error');
+    const trackingNo = this.mblno.trim().toUpperCase();
+    if (!trackingNo) {
+      this.showStatus('Please enter an MBL or Container number.', 'error');
       return;
     }
-    // Pass only the MBLNO — the extension identifies the carrier and opens the correct URL
-    window.postMessage({ action: 'OPEN_SHIPPING_URL', bookingNo: mblno }, '*');
-    this.showStatus(`Tracking "${mblno}"…`, 'success');
+    // Pass the number as-is — the extension classifies MBL vs container, identifies the
+    // carrier, and opens the correct tracking URL.
+    window.postMessage({ action: 'OPEN_SHIPPING_URL', bookingNo: trackingNo }, '*');
+    this.showStatus(`Tracking "${trackingNo}"…`, 'success');
   }
 
   private showStatus(message: string, type: 'success' | 'error'): void {
