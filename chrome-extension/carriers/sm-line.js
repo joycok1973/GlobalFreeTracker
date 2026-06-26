@@ -2,7 +2,9 @@
 CARRIER_CONFIGS['SMLU'] = {
   scac:        'SMLU',
   prefixes:    ['SMLM'],
-  containerPrefixes: ['SMLU'],
+  // SMCU is SM Line's container owner code. (SMLU is Seaboard Marine, a different
+  // carrier — only SM Line's SCAC, not its container BIC, so it's not used here.)
+  containerPrefixes: ['SMCU'],
   stripPrefix: true,   // SM Line search does not use the prefix
   hostname:    'esvc.smlines.com',
   url:         'https://esvc.smlines.com/smline/CUP_HOM_3301.do',
