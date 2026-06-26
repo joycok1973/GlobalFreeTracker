@@ -10,6 +10,13 @@ CARRIER_CONFIGS['PABV'] = {
   inputSelectors:  [],
   submitSelectors: [],
   submitMethod:    'none',
+  // PIL shows results from the URL (no form). We inject only to dismiss its Cookiebot
+  // consent dialog — "Allow all" (with "Deny" as a fallback). The engine's consent path
+  // polls for it, since Cookiebot loads asynchronously.
+  consentSelectors: [
+    '#CybotCookiebotDialogBodyLevelButtonLevelOptinAllowAll',
+    '#CybotCookiebotDialogBodyButtonDecline'
+  ],
 
   scrape() {
     // TODO: extract tracking results from PIL page
