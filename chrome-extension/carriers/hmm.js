@@ -8,10 +8,11 @@ CARRIER_CONFIGS['HDMU'] = {
   url:      'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do',
   // Inject after page load so our script doesn't compete with the page's init.
   injectOnComplete: true,
-  // HMM has a dedicated container field (srchCntrNo1) separate from the BL field, so
-  // pick the input by search type: container numbers go into srchCntrNo1.
+  // HMM has dedicated fields per search type — BL → srchBlNo1, Container → srchCntrNo1 —
+  // so pick the input by search type rather than a shared box.
   inputSelectorsByType: {
-    container: ['input[name="srchCntrNo1"]', 'input[data-format-input="CNo"]']
+    container: ['input[name="srchCntrNo1"]', 'input[data-format-input="CNo"]'],
+    bl:        ['input[name="srchBlNo1"]', 'input[data-format-input="BLNo"]']
   },
   inputSelectors: [
     'input[name="blNo"]',
@@ -25,7 +26,11 @@ CARRIER_CONFIGS['HDMU'] = {
     'input[placeholder*="tracking" i]',
     'input[type="text"]:not([type="hidden"])'
   ],
+  // Search button is <button onclick="search()">Retrieve</button> (the engine clicks the
+  // first visible match, so the right tab's button is used).
   submitSelectors: [
+    'button[onclick="search()"]',
+    'button[onclick*="search" i]',
     'input[type="submit"]',
     'input[type="image"]',
     'button[type="submit"]',
