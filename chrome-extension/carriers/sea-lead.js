@@ -16,6 +16,9 @@ CARRIER_CONFIGS['SJHH'] = {
     'button[type="submit"]'
   ],
   submitMethod: 'click',
+  // The cookie banner ("…Accept") can render after load, so poll for it and dismiss it.
+  // "Accept" matches the generic consent matcher ("Reject" does not), so it accepts.
+  consentPoll: true,
 
   scrape() {
     // TODO: extract tracking results from Sea-Lead page
