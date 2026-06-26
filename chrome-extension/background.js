@@ -119,7 +119,9 @@ function openTracking(bookingNo, sendResponse) {
     if (carrier.openOnly) {
       // DIAGNOSTIC: open the tab but inject nothing, to compare raw page load speed.
       console.log('[ShippingTracker] openOnly: opened %s without filling (diagnostic)', carrier.scac);
-    } else if (finalBookingNo && tab.id != null) {
+    } else if ((finalBookingNo || carrier.consentSelectors) && tab.id != null) {
+      // Inject to fill the form, OR (for URL-template carriers like Maersk that show
+      // results directly) just to dismiss the cookie banner via consentSelectors.
       pendingFills.set(tab.id, {
         bookingNo:  finalBookingNo,
         hostname:   carrier.hostname,

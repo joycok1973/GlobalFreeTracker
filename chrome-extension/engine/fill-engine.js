@@ -226,24 +226,26 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     'button[id*="consent" i]',
   ];
 
+  // Returns true if a consent button was clicked, false otherwise.
   async function dismissConsentBanner() {
-    // Match buttons/links whose visible text is agree/accept. (We deliberately do NOT
-    // auto-click generic "Reject" buttons by text: on some sites — e.g. Evergreen's
-    // ShipmentLink — a reject button reloads the page, which wipes the fill. Carriers
-    // that support a clean reject expose it explicitly via config.consentSelectors,
-    // e.g. MSC's OneTrust #onetrust-reject-all-handler, tried first below.)
-    const textMatch = [...document.querySelectorAll('button, a, input[type="button"], input[type="submit"]')]
-      .find(el => /^\s*(i\s+)?agree\s*$|^\s*accept(\s+all)?\s*$/i.test(el.textContent?.trim() ?? el.value ?? ''));
-
-    const el = CONSENT_SELECTORS.map(s => document.querySelector(s)).find(Boolean) ?? textMatch ?? null;
-
-    if (!el) return;
+    // Carrier-specific selectors first (e.g. MSC's OneTrust reject, Maersk's
+    // "Essential only"), then a generic accept/agree text match as a fallback. We
+    // deliberately do NOT auto-click generic "Reject" buttons by text: on some sites
+    // (Evergreen) a reject button reloads the page and wipes the fill — carriers with a
+    // clean reject declare it explicitly via config.consentSelectors.
+    let el = CONSENT_SELECTORS.map(s => document.querySelector(s)).find(Boolean);
+    if (!el) { // only run the expensive whole-page text scan when no selector matched
+      el = [...document.querySelectorAll('button, a, input[type="button"], input[type="submit"]')]
+        .find(b => /^\s*(i\s+)?agree\s*$|^\s*accept(\s+all)?\s*$/i.test(b.textContent?.trim() ?? b.value ?? ''));
+    }
+    if (!el) return false;
     const r = el.getBoundingClientRect();
-    if (r.width === 0 || r.height === 0) return;
+    if (r.width === 0 || r.height === 0) return false;
 
     await humanClick(el);
     console.log('[ShippingTracker] Dismissed consent banner on %s', hostname);
     await sleep(rand(400, 700)); // let the banner animate away
+    return true;
   }
 
   // ── Search-category dropdown (e.g. ONE's "BL No." vs "Container No.") ───────
@@ -380,6 +382,16 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   // blocks on slow trailing resources (ads/analytics) and can delay the search by many
   // seconds. We wait only for the elements we need, via the polls below.
   if (config.initialDelay) await sleep(config.initialDelay);
+
+  // Consent-only carriers (URL-template result pages, no form to fill — e.g. Maersk):
+  // there's nothing to type; just dismiss the cookie banner, which may load async.
+  if (!(config.inputSelectors?.length)) {
+    for (let i = 0; i < 25; i++) {            // poll ~5 s for a late-rendering CMP banner
+      if (await dismissConsentBanner()) break;
+      await sleep(200);
+    }
+    return { ok: true, stage: 'consent-only' };
+  }
 
   await dismissConsentBanner();
 
