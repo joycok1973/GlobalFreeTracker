@@ -15,8 +15,8 @@ export class AppComponent implements OnInit {
   statusMessage = '';
   statusType: 'success' | 'error' | '' = '';
 
-  // Carriers the user can pick from (Track-Trace is the extension's internal fallback).
-  readonly carriers = CARRIERS.filter(c => c.scac !== 'TRTR');
+  // Carriers the user can pick from.
+  readonly carriers = CARRIERS;
 
   ngOnInit(): void {
     // The extension opens this app with ?refno=… when it can't detect the carrier,
