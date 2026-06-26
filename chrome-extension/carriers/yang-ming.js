@@ -23,6 +23,10 @@ CARRIER_CONFIGS['YMLU'] = {
   ],
   submitSelectors: [],
   submitMethod: 'enter',
+  // Yang Ming's cookie banner ("…Agree") only appears once results render, after the
+  // fill — so poll for it post-submit and dismiss it (the "Agree" text is matched
+  // generically; no stable selector needed).
+  consentPoll: true,
 
   scrape() {
     // TODO: extract tracking results from Yang Ming page
