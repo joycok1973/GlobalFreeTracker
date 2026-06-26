@@ -1,15 +1,15 @@
 // OOCL (Orient Overseas Container Line)
 CARRIER_CONFIGS['OOLU'] = {
-  scac:     'OOLU',
-  prefixes:    ['OOLU', 'OOCL'],
-  containerPrefixes: ['OOLU', 'OOCU', 'FFAU'], // FFAU = Florens (COSCO/OOCL group leasing arm)
+  scac: 'OOLU',
+  prefixes: ['OOLU', 'OOCL'],
+  containerPrefixes: ['OOLU', 'OOCU'], // FFAU = Florens (COSCO/OOCL group leasing arm)
   stripPrefix: false,
   // Inject only after the page has fully loaded (spinner stopped), not on
   // DOMContentLoaded — so our script never competes with OOCL's own loading and the
   // page loads as fast as a manual visit. The input + dropdown are also ready by then.
   injectOnComplete: true,
   hostname: 'www.oocl.com',
-  url:      'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx',
+  url: 'https://www.oocl.com/eng/ourservices/eservices/cargotracking/pages/cargotracking.aspx',
   inputSelectors: [
     '#SEARCH_NUMBER',
     'input[name="SEARCH_NUMBER"]',
@@ -30,12 +30,12 @@ CARRIER_CONFIGS['OOLU'] = {
   // until the dropdown is displayed -> pick the category -> re-enter the number ->
   // click search. Options: "B/L #" (bl) · "Booking #" (booking) · "Container #" (cont).
   searchType: {
-    afterInput:      true,
+    afterInput: true,
     triggerSelector: '.cargoTrackingDropDrown button.dropdown-toggle', // bootstrap-select button
-    optionSelector:  '.cargoTrackingDropDrown .dropdown-menu li a',    // option links (<span class="text">)
+    optionSelector: '.cargoTrackingDropDrown .dropdown-menu li a',    // option links (<span class="text">)
     labels: {
       container: 'Container',   // -> "Container #"
-      bl:        'B/L'          // -> "B/L #"  (OOLU + 8-12 digits)
+      bl: 'B/L'          // -> "B/L #"  (OOLU + 8-12 digits)
     }
   },
 

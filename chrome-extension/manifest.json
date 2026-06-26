@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MBL And Container Tracker",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Track shipments from any webpage. Select a Container or MBL No, right-click, and choose *Track Shipment* to open the tracking page",
   "permissions": [
     "scripting",
@@ -37,7 +37,6 @@
     {
       "matches": [
         "http://localhost:4200/*",
-        "https://trace.divitsoftlabs.com/*",
         "https://www.cargomar.in/extension/*"
       ],
       "js": [
