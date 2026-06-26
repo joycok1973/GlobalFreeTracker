@@ -225,11 +225,18 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   ];
 
   async function dismissConsentBanner() {
-    // Also match buttons/links whose visible text contains agree/accept
-    const textMatch = [...document.querySelectorAll('button, a, input[type="button"], input[type="submit"]')]
-      .find(el => /^\s*(i\s+)?agree\s*$|^\s*accept(\s+all)?\s*$/i.test(el.textContent?.trim() ?? el.value ?? ''));
+    const els = [...document.querySelectorAll('button, a, input[type="button"], input[type="submit"]')];
+    const txt = el => (el.textContent?.trim() || el.value || '');
+    const vis = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
+    // Prefer rejecting non-essential cookies (privacy-preserving, e.g. Evergreen's
+    // "Reject Non-Essential"); then carrier/generic selectors; then accept as a last
+    // resort — any of them dismisses the banner so the form is usable.
+    const rejectMatch = els.find(el => vis(el) && /^\s*(reject|decline)(\s+(all|non[- ]?essential|all non[- ]?essential))?\s*$/i.test(txt(el)));
+    const acceptMatch = els.find(el => vis(el) && /^\s*(i\s+)?agree\s*$|^\s*accept(\s+all)?\s*$/i.test(txt(el)));
 
-    const el = CONSENT_SELECTORS.map(s => document.querySelector(s)).find(Boolean) ?? textMatch ?? null;
+    const el = rejectMatch
+      ?? CONSENT_SELECTORS.map(s => document.querySelector(s)).find(Boolean)
+      ?? acceptMatch ?? null;
 
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -252,6 +259,25 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   async function selectSearchType(wantedKey, opts = {}) {
     const st = config.searchType;
     if (!st) return 'unchanged';                            // carrier has no such dropdown
+
+    // Radio-button search type (e.g. Evergreen: <input type="radio" name="SEL" value="s_cntr">)
+    if (st.mode === 'radio') {
+      const val = (st.values ?? {})[wantedKey];
+      if (!val) return 'unchanged';                         // category not configured — leave default
+      const findRadio = () => document.querySelector(`input[type="radio"][name="${st.name}"][value="${val}"]`);
+      let radio = findRadio();
+      if (!radio && opts.wait) {
+        for (let i = 0; i < 25 && !radio; i++) { await sleep(200); radio = findRadio(); }
+      }
+      if (!radio) return false;                             // not rendered yet
+      if (radio.checked) return 'unchanged';                // already the wanted type
+      radio.checked = true;
+      radio.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      radio.dispatchEvent(new Event('change', { bubbles: true }));
+      console.log('[ShippingTracker] Selected search radio %s=%s on %s', st.name, val, hostname);
+      return 'changed';
+    }
+
     const label = (st.labels ?? {})[wantedKey];
     if (!label) return 'unchanged';                         // category not configured — leave default
 
