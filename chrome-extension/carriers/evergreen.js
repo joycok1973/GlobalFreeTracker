@@ -21,6 +21,7 @@ CARRIER_CONFIGS['EGLV'] = {
   // doesn't trigger it, so click the button.
   submitSelectors: ['input[type="button"][value="Submit"]', 'input[onclick*="frmSubmit"]'],
   submitMethod: 'click',
+  typeMethod: 'instant',   // set the value directly instead of typing char-by-char
 
   // Search type is a radio group (name="SEL"): s_bl / s_cntr / bk. Select the radio
   // matching the query type before typing. Default on the page is Container (s_cntr),
