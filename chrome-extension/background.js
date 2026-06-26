@@ -98,9 +98,6 @@ function resolveCarrier(value, queryType) {
 // Web app used for manual carrier selection when the carrier can't be auto-detected.
 // (For local dev, point this at 'http://localhost:4200'.)
 const MANUAL_SELECT_URL = 'https://www.cargomar.in/extension/tracker.html';
-// Bump this whenever tracker.html changes — appended as ?v=… to bypass the browser cache
-// and always load the latest file.
-const TRACKER_VERSION = '1.0.1';
 
 // ── Shared: open carrier tab and queue form fill ─────────────────────────────
 // scac        — optional: carrier chosen by the user in the app (overrides detection).
@@ -116,8 +113,11 @@ function openTracking(bookingNo, sendResponse, scac, senderTabId) {
   // No carrier detected and none chosen → send the user to the app to pick one,
   // instead of falling back to the Track-Trace aggregator.
   if (!chosen && carrier.scac === 'TRTR') {
+    // &v=<extension version> cache-busts tracker.html — bump the manifest version to
+    // force the latest file.
     const sep = MANUAL_SELECT_URL.includes('?') ? '&' : '?';
-    const appUrl = MANUAL_SELECT_URL + sep + 'refno=' + encodeURIComponent(bookingNo) + '&v=' + TRACKER_VERSION;
+    const appUrl = MANUAL_SELECT_URL + sep + 'refno=' + encodeURIComponent(bookingNo)
+                 + '&v=' + chrome.runtime.getManifest().version;
     console.log('[ShippingTracker] No carrier for "%s" — opening app for manual selection', bookingNo);
     chrome.tabs.create({ url: appUrl, active: true }, (tab) => {
       if (sendResponse) sendResponse({ success: true, tabId: tab.id, carrier: null, manualSelect: true });
