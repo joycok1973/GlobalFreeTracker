@@ -6,6 +6,13 @@ CARRIER_CONFIGS['SMLU'] = {
   stripPrefix: true,   // SM Line search does not use the prefix
   hostname:    'esvc.smlines.com',
   url:         'https://esvc.smlines.com/smline/CUP_HOM_3301.do',
+  // Search type is a native <select id="searchType">: B = BL/Booking, C = Container,
+  // P = Purchase Order. Select the matching one before typing.
+  searchType: {
+    mode:     'select',
+    selector: '#searchType',
+    values:   { container: 'C', bl: 'B' }
+  },
   inputSelectors: [
     'textarea#searchName',
     'textarea[name="searchName"]',
