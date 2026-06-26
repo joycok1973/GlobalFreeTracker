@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -9,10 +9,16 @@ import { FormsModule } from '@angular/forms';
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
+export class AppComponent implements OnInit {
   mblno = '';
   statusMessage = '';
   statusType: 'success' | 'error' | '' = '';
+
+  ngOnInit(): void {
+    // Optional ?refno=… in the URL pre-fills the input box (MBL or container).
+    const refno = new URLSearchParams(window.location.search).get('refno');
+    if (refno) this.mblno = refno.trim().toUpperCase();
+  }
 
   testCarriers: { carrier: string; blno: string }[] = [
     { carrier: 'ONE Line',              blno: 'ONEYCOKG03088800'  },
