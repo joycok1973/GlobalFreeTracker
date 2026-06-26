@@ -23,17 +23,25 @@
       }
     </div>
 
-    <div class="test-list">
-      <span class="test-list-label">Quick Test</span>
-      <div class="test-select-row">
-        <select class="carrier-select" (change)="onCarrierSelect($event)">
-          <option value="">— Select a carrier —</option>
-          @for (item of testCarriers; track item.carrier; let i = $index) {
-            <option [value]="i">{{ item.carrier }}</option>
-          }
-        </select>
-        @if (selectedCarrier) {
-          <span class="test-blno">{{ selectedCarrier.blno }}</span>
+    @if (detected) {
+      <div class="carrier-pill" [class.fallback]="detected.fallback">
+        <span class="carrier-pill-logo">{{ detected.type === 'Container' ? '📦' : '📄' }}</span>
+        <span class="carrier-pill-name">{{ detected.carrier.name }}</span>
+        <span class="carrier-pill-note">{{ detected.fallback ? 'auto-detect' : detected.type }}</span>
+      </div>
+    }
+
+    <div class="carriers">
+      <span class="carriers-label">Supported carriers <span class="carriers-hint">(click to try)</span></span>
+      <div class="carriers-grid">
+        @for (c of carriers; track c.scac) {
+          <button
+            type="button"
+            class="carrier-chip"
+            [class.active]="detected?.carrier?.scac === c.scac"
+            (click)="fillSample(c)"
+            [title]="c.scac"
+          >{{ c.name }}</button>
         }
       </div>
     </div>

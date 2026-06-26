@@ -210,59 +210,57 @@ h1 {
   margin-left: auto;
 }
 
-.test-list {
-  margin-top: 16px;
+.carriers {
+  margin-top: 18px;
 }
 
-.test-list-label {
+.carriers-label {
   display: block;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: rgba(255, 255, 255, 0.4);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
-.test-select-row {
+.carriers-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.carriers-grid {
   display: flex;
-  align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 7px;
 }
 
-.carrier-select {
-  flex: 1;
-  padding: 7px 10px;
+.carrier-chip {
+  padding: 6px 11px;
   background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
   font-family: 'Inter', sans-serif;
   cursor: pointer;
-  outline: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
-.carrier-select:focus {
+.carrier-chip:hover {
   border-color: rgba(26, 111, 196, 0.7);
-  background: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.95);
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.carrier-select option {
-  background: #1a2035;
-  color: rgba(255, 255, 255, 0.85);
-}
-
-.test-blno {
-  font-size: 12px;
-  font-family: 'Inter', monospace;
-  color: rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  padding: 5px 9px;
-  white-space: nowrap;
+.carrier-chip.active {
+  background: #1a6fc4;
+  border-color: #1a6fc4;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 12px rgba(26, 111, 196, 0.5);
 }
 
 .open-btn {
