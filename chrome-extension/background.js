@@ -95,11 +95,33 @@ function resolveCarrier(value, queryType) {
     : resolveCarrierByMbl(value);
 }
 
+// Web app used for manual carrier selection when the carrier can't be auto-detected.
+// (Production; for local dev change to 'http://localhost:4200'.)
+const MANUAL_SELECT_URL = 'https://trace.divitsoftlabs.com';
+
 // ── Shared: open carrier tab and queue form fill ─────────────────────────────
-function openTracking(bookingNo, sendResponse) {
+// scac        — optional: carrier chosen by the user in the app (overrides detection).
+// senderTabId — optional: when the user picked a carrier in the app, navigate that same
+//               tab to the carrier page (instead of opening a new one).
+function openTracking(bookingNo, sendResponse, scac, senderTabId) {
   const searchType = classifyQuery(bookingNo);          // 'container' | 'bl'
-  const carrier    = resolveCarrier(bookingNo, searchType);
-  console.log('[ShippingTracker] Detected carrier: %s (%s) for: %s', carrier.scac, searchType, bookingNo);
+
+  // An explicit SCAC (user picked the carrier in the app) overrides auto-detection.
+  const chosen  = scac ? CARRIER_CONFIGS[scac.toUpperCase()] : null;
+  const carrier = chosen ?? resolveCarrier(bookingNo, searchType);
+
+  // No carrier detected and none chosen → send the user to the app to pick one,
+  // instead of falling back to the Track-Trace aggregator.
+  if (!chosen && carrier.scac === 'TRTR') {
+    const appUrl = MANUAL_SELECT_URL + '/?refno=' + encodeURIComponent(bookingNo);
+    console.log('[ShippingTracker] No carrier for "%s" — opening app for manual selection', bookingNo);
+    chrome.tabs.create({ url: appUrl, active: true }, (tab) => {
+      if (sendResponse) sendResponse({ success: true, tabId: tab.id, carrier: null, manualSelect: true });
+    });
+    return;
+  }
+
+  console.log('[ShippingTracker] Carrier: %s (%s)%s for: %s', carrier.scac, searchType, chosen ? ' [manual]' : '', bookingNo);
 
   // A container number must be searched whole (prefix included); only BL / booking
   // numbers get the 4-letter prefix stripped for carriers like ONE Line.
@@ -117,14 +139,13 @@ function openTracking(bookingNo, sendResponse) {
   // For URL-template carriers the number is already in the URL — no form filling needed
   const finalBookingNo = template ? '' : searchBookingNo;
 
-  chrome.tabs.create({ url: finalUrl, active: true }, (tab) => {
+  function queueFill(tabId) {
     if (carrier.openOnly) {
-      // DIAGNOSTIC: open the tab but inject nothing, to compare raw page load speed.
       console.log('[ShippingTracker] openOnly: opened %s without filling (diagnostic)', carrier.scac);
-    } else if ((finalBookingNo || carrier.consentSelectors) && tab.id != null) {
+    } else if ((finalBookingNo || carrier.consentSelectors) && tabId != null) {
       // Inject to fill the form, OR (for URL-template carriers like Maersk that show
       // results directly) just to dismiss the cookie banner via consentSelectors.
-      pendingFills.set(tab.id, {
+      pendingFills.set(tabId, {
         bookingNo:  finalBookingNo,
         hostname:   carrier.hostname,
         searchType: searchType,
@@ -133,8 +154,20 @@ function openTracking(bookingNo, sendResponse) {
         createdAt:  Date.now()
       });
     }
-    if (sendResponse) sendResponse({ success: true, tabId: tab.id, carrier: carrier.scac });
-  });
+  }
+
+  // Manual selection from the app → navigate the app's own tab (same page). Set the
+  // pending fill first so the load events have it. Otherwise open a fresh tab.
+  if (chosen && senderTabId != null) {
+    queueFill(senderTabId);
+    chrome.tabs.update(senderTabId, { url: finalUrl, active: true });
+    if (sendResponse) sendResponse({ success: true, tabId: senderTabId, carrier: carrier.scac });
+  } else {
+    chrome.tabs.create({ url: finalUrl, active: true }, (tab) => {
+      queueFill(tab.id);
+      if (sendResponse) sendResponse({ success: true, tabId: tab.id, carrier: carrier.scac });
+    });
+  }
 }
 
 // ── Register context menu on install / update ─────────────────────────────────
@@ -154,7 +187,7 @@ chrome.contextMenus.onClicked.addListener((info) => {
 });
 
 // ── Message from content-script ──────────────────────────────────────────────
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   if (message.action !== 'OPEN_SHIPPING_URL') return;
 
   const bookingNo = (message.bookingNo ?? '').trim();
@@ -164,7 +197,9 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return;
   }
 
-  openTracking(bookingNo, sendResponse);
+  // message.scac (optional) = carrier the user picked in the app; sender.tab.id lets us
+  // reuse the app's own tab when they picked manually.
+  openTracking(bookingNo, sendResponse, message.scac, sender.tab?.id);
   return true; // keep channel open for async sendResponse
 });
 

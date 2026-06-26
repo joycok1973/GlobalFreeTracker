@@ -2,7 +2,7 @@
   <div class="card-header">
     <div class="icon-wrap">🚢</div>
     <h1>Shipment Tracking</h1>
-    <p class="subtitle">Enter an MBL# / Container# to open the carrier tracking portal</p>
+    <p class="subtitle">Enter an MBL# / Container#, then pick its carrier to track</p>
   </div>
 
   <div class="card-body">
@@ -23,38 +23,19 @@
       }
     </div>
 
-    @if (detected) {
-      <div class="carrier-pill">
-        <span class="carrier-pill-logo">{{ detected.type === 'Container' ? '📦' : '📄' }}</span>
-        <span class="carrier-pill-name">{{ detected.carrier.name }}</span>
-        <span class="carrier-pill-note">{{ detected.type }}</span>
-      </div>
-    }
-
     <div class="carriers">
-      <span class="carriers-label">Supported carriers <span class="carriers-hint">(click to try)</span></span>
+      <span class="carriers-label">Choose carrier <span class="carriers-hint">(click to track)</span></span>
       <div class="carriers-grid">
         @for (c of carriers; track c.scac) {
           <button
             type="button"
             class="carrier-chip"
-            [class.active]="detected?.carrier?.scac === c.scac"
-            (click)="fillSample(c)"
+            (click)="trackWithCarrier(c)"
             [title]="c.scac"
           >{{ c.name }}</button>
         }
       </div>
     </div>
-
-    <button
-      class="open-btn"
-      [class.disabled]="!mblno"
-      [disabled]="!mblno"
-      (click)="openInExtension()"
-    >
-      <span class="btn-icon">↗</span>
-      Open &amp; Track
-    </button>
 
     @if (statusMessage) {
       <div class="status-banner" [class.success]="statusType === 'success'" [class.error]="statusType === 'error'">

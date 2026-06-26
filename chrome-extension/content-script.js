@@ -3,6 +3,8 @@ window.addEventListener('message', (event) => {
   if (!event.data || event.data.action !== 'OPEN_SHIPPING_URL') return;
 
   const bookingNo = typeof event.data.bookingNo === 'string' ? event.data.bookingNo.trim() : '';
+  // Optional: carrier SCAC the user picked manually in the app.
+  const scac = typeof event.data.scac === 'string' ? event.data.scac.trim().toUpperCase() : undefined;
 
   if (!bookingNo) return;
 
@@ -25,7 +27,7 @@ window.addEventListener('message', (event) => {
 
   function sendToBackground(retryCount) {
     try {
-      chrome.runtime.sendMessage({ action: 'OPEN_SHIPPING_URL', bookingNo }, (response) => {
+      chrome.runtime.sendMessage({ action: 'OPEN_SHIPPING_URL', bookingNo, scac }, (response) => {
         if (chrome.runtime.lastError) {
           if (retryCount > 0) {
             setTimeout(() => sendToBackground(retryCount - 1), 300);
