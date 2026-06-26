@@ -2,7 +2,10 @@
 CARRIER_CONFIGS['EGLV'] = {
   scac:     'EGLV',
   prefixes:    ['EGLV'],
-  containerPrefixes: ['EGHU', 'EGSU', 'EISU', 'EITU', 'EMCU'], // EMCU = Evergreen Marine Corp
+  // Evergreen Group container owner codes (all track via ShipmentLink):
+  // Evergreen Marine + subsidiaries — EMCU (Evergreen Marine Corp), EGSU (SG),
+  // HMCU (UK), IMTU/LTIU (Italia Marittima / ex-Lloyd Triestino), UGMU.
+  containerPrefixes: ['EGHU', 'EGSU', 'EISU', 'EITU', 'EMCU', 'HMCU', 'IMTU', 'LTIU', 'UGMU'],
   stripPrefix: true,
   hostname: 'ct.shipmentlink.com',
   url:      'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do',
