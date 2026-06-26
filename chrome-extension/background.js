@@ -96,8 +96,8 @@ function resolveCarrier(value, queryType) {
 }
 
 // Web app used for manual carrier selection when the carrier can't be auto-detected.
-// (Production; for local dev change to 'http://localhost:4200'.)
-const MANUAL_SELECT_URL = 'https://trace.divitsoftlabs.com';
+// Local dev value; for production change to 'https://trace.divitsoftlabs.com'.
+const MANUAL_SELECT_URL = 'http://localhost:4200';
 
 // ── Shared: open carrier tab and queue form fill ─────────────────────────────
 // scac        — optional: carrier chosen by the user in the app (overrides detection).
