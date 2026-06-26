@@ -7,6 +7,9 @@ CARRIER_CONFIGS['EGLV'] = {
   // HMCU (UK), IMTU/LTIU (Italia Marittima / ex-Lloyd Triestino), UGMU.
   containerPrefixes: ['EGHU', 'EGSU', 'EISU', 'EITU', 'EMCU', 'HMCU', 'IMTU', 'LTIU', 'UGMU'],
   stripPrefix: true,
+  // Inject only after the page has fully loaded (like OOCL) — injecting during load
+  // competes with ShipmentLink's own initialization and slows the page.
+  injectOnComplete: true,
   hostname: 'ct.shipmentlink.com',
   url:      'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do',
   inputSelectors: [
