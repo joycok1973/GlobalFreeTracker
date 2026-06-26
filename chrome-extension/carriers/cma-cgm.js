@@ -2,7 +2,9 @@
 CARRIER_CONFIGS['CMDU'] = {
   scac:     'CMDU',
   prefixes:    ['CMDU', 'CGMU'],
-  containerPrefixes: ['CMAU', 'CGMU', 'CMCU', 'ECMU', 'APLU', 'APRU', 'APHU', 'ANLU', 'CNCU'], // incl. APL / ANL / CNC
+  // CMA CGM-owned codes + subsidiaries (APL/ANL/CNC). Leased codes the line merely
+  // operates (FFAU, TLLU, GESU, …) are intentionally NOT here — they belong to lessors.
+  containerPrefixes: ['CMAU', 'CGMU', 'CMCU', 'CXDU', 'CXRU', 'ECMU', 'APLU', 'APRU', 'APHU', 'APZU', 'ANLU', 'CNCU'],
   stripPrefix: true,
   // Inject only after the page has fully loaded (like OOCL/Evergreen) so our script
   // doesn't compete with the page's own initialization.
