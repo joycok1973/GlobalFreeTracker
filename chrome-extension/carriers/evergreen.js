@@ -10,6 +10,7 @@ CARRIER_CONFIGS['EGLV'] = {
   // Inject only after the page has fully loaded (like OOCL) — injecting during load
   // competes with ShipmentLink's own initialization and slows the page.
   injectOnComplete: true,
+  skipSubmit: true,   // TEMP DIAGNOSTIC: fill but don't click Submit (revert after testing)
   hostname: 'ct.shipmentlink.com',
   url:      'https://ct.shipmentlink.com/servlet/TDB1_CargoTracking.do',
   inputSelectors: [
