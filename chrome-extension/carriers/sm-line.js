@@ -18,6 +18,7 @@ CARRIER_CONFIGS['SMLU'] = {
   ],
   submitMethod: 'click',
   typeMethod:   'instant',
+  openOnly: true,   // TEMP DIAGNOSTIC: open the page, inject nothing (revert after testing)
 
   scrape() {
     // TODO: extract tracking results from SM Line page
