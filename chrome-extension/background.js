@@ -96,8 +96,8 @@ function resolveCarrier(value, queryType) {
 }
 
 // Web app used for manual carrier selection when the carrier can't be auto-detected.
-// Local dev value; for production change to 'https://trace.divitsoftlabs.com'.
-const MANUAL_SELECT_URL = 'http://localhost:4200';
+// (For local dev, point this at 'http://localhost:4200'.)
+const MANUAL_SELECT_URL = 'https://www.cargomar.in/extension/tracker.html';
 
 // ── Shared: open carrier tab and queue form fill ─────────────────────────────
 // scac        — optional: carrier chosen by the user in the app (overrides detection).
@@ -113,7 +113,8 @@ function openTracking(bookingNo, sendResponse, scac, senderTabId) {
   // No carrier detected and none chosen → send the user to the app to pick one,
   // instead of falling back to the Track-Trace aggregator.
   if (!chosen && carrier.scac === 'TRTR') {
-    const appUrl = MANUAL_SELECT_URL + '/?refno=' + encodeURIComponent(bookingNo);
+    const sep = MANUAL_SELECT_URL.includes('?') ? '&' : '?';
+    const appUrl = MANUAL_SELECT_URL + sep + 'refno=' + encodeURIComponent(bookingNo);
     console.log('[ShippingTracker] No carrier for "%s" — opening app for manual selection', bookingNo);
     chrome.tabs.create({ url: appUrl, active: true }, (tab) => {
       if (sendResponse) sendResponse({ success: true, tabId: tab.id, carrier: null, manualSelect: true });

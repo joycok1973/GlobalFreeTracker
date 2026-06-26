@@ -37,7 +37,8 @@
     {
       "matches": [
         "http://localhost:4200/*",
-        "https://trace.divitsoftlabs.com/*"
+        "https://trace.divitsoftlabs.com/*",
+        "https://www.cargomar.in/extension/*"
       ],
       "js": [
         "content-script.js"
