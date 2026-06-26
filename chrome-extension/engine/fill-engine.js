@@ -281,6 +281,24 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
       return 'changed';
     }
 
+    // Native <select> search type (e.g. Wan Hai's #cargoType: 1=Ctnr, 2=Book/BL)
+    if (st.mode === 'select') {
+      const val = (st.values ?? {})[wantedKey];
+      if (!val) return 'unchanged';
+      const findSel = () => document.querySelector(st.selector || `select[name="${st.name}"]`);
+      let sel = findSel();
+      if (!sel && opts.wait) {
+        for (let i = 0; i < 25 && !sel; i++) { await sleep(200); sel = findSel(); }
+      }
+      if (!sel) return false;                               // not rendered yet
+      if (String(sel.value) === String(val)) return 'unchanged'; // already the wanted type
+      sel.value = String(val);
+      sel.dispatchEvent(new Event('input',  { bubbles: true }));
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+      console.log('[ShippingTracker] Selected %s=%s on %s', st.selector || st.name, val, hostname);
+      return 'changed';
+    }
+
     const label = (st.labels ?? {})[wantedKey];
     if (!label) return 'unchanged';                         // category not configured — leave default
 
