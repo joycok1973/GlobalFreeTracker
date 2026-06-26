@@ -2,7 +2,7 @@
 CARRIER_CONFIGS['WHLC'] = {
   scac:     'WHLC',
   prefixes:    ['WHLC'],
-  containerPrefixes: ['WHLU', 'WHSU'],
+  containerPrefixes: ['WHLU', 'WHSU', 'TPCU'],
   stripPrefix: true,
   hostname: 'www.wanhai.com',
   url:      'https://www.wanhai.com/views/Main.xhtml',
