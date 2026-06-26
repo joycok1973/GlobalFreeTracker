@@ -2,10 +2,17 @@
 CARRIER_CONFIGS['HDMU'] = {
   scac:     'HDMU',
   prefixes:    ['HDMU', 'HYDA'],
-  containerPrefixes: ['HDMU', 'HMMU'],
+  containerPrefixes: ['HDMU', 'HMMU', 'HAMU'],
   stripPrefix: false,
   hostname: 'www.hmm21.com',
   url:      'https://www.hmm21.com/e-service/general/trackNTrace/TrackNTrace.do',
+  // Inject after page load so our script doesn't compete with the page's init.
+  injectOnComplete: true,
+  // HMM has a dedicated container field (srchCntrNo1) separate from the BL field, so
+  // pick the input by search type: container numbers go into srchCntrNo1.
+  inputSelectorsByType: {
+    container: ['input[name="srchCntrNo1"]', 'input[data-format-input="CNo"]']
+  },
   inputSelectors: [
     'input[name="blNo"]',
     'textarea[name="blNo"]',

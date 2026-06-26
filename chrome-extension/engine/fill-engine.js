@@ -341,7 +341,10 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
       if (!searchTypeReady) { busy = false; return null; } // retry on next mutation
     }
 
-    for (const sel of config.inputSelectors) {
+    // Carriers with a dedicated field per search type (e.g. HMM's srchCntrNo1 for
+    // containers) provide inputSelectorsByType; otherwise use the shared inputSelectors.
+    const inputSelectors = config.inputSelectorsByType?.[searchType] ?? config.inputSelectors;
+    for (const sel of inputSelectors) {
       try {
         const el = document.querySelector(sel);
         if (!el || el.disabled || el.readOnly) continue;
