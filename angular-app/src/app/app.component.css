@@ -330,8 +330,24 @@ h1 {
 .card-footer {
   padding: 14px 32px;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   font-size: 11px;
   color: rgba(255, 255, 255, 0.3);
   letter-spacing: 0.3px;
+}
+
+.store-link {
+  color: #4ea3f0;
+  text-decoration: none;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+
+.store-link:hover {
+  color: #7bc0ff;
+  text-decoration: underline;
 }
