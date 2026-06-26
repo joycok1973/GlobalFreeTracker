@@ -5,6 +5,11 @@ CARRIER_CONFIGS['HDUJ'] = {
   stripPrefix: false,
   hostname: 'elines.hedehk.com',
   url: 'http://elines.hedehk.com/cargoDynamicEN',
+  // HEDE has a dedicated container field (#cntr) separate from the BL field (#billno).
+  inputSelectorsByType: {
+    container: ['input#cntr', 'input[name="cntr"]'],
+    bl:        ['input#billno', 'input[name="billno"]']
+  },
   inputSelectors: [
     'input#billno',
     'input[name="billno"]'
