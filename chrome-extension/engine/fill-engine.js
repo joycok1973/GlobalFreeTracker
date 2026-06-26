@@ -419,7 +419,14 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   await dismissConsentBanner();
 
   const first = await tryFill();
-  if (first) return first;
+  if (first) {
+    // Some sites only show the cookie banner once results render (e.g. Yang Ming),
+    // i.e. after we've already filled + submitted. Poll briefly to dismiss it then.
+    if (config.consentPoll) {
+      for (let i = 0; i < 16 && !(await dismissConsentBanner()); i++) await sleep(250); // ~4 s
+    }
+    return first;
+  }
 
   // All carriers are injected after full page load, so the form should already exist.
   // Carriers with injectOnComplete opt into "bail if the form isn't here": a missing
