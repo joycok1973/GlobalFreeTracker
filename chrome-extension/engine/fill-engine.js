@@ -225,18 +225,15 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   ];
 
   async function dismissConsentBanner() {
-    const els = [...document.querySelectorAll('button, a, input[type="button"], input[type="submit"]')];
-    const txt = el => (el.textContent?.trim() || el.value || '');
-    const vis = el => { const r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; };
-    // Prefer rejecting non-essential cookies (privacy-preserving, e.g. Evergreen's
-    // "Reject Non-Essential"); then carrier/generic selectors; then accept as a last
-    // resort — any of them dismisses the banner so the form is usable.
-    const rejectMatch = els.find(el => vis(el) && /^\s*(reject|decline)(\s+(all|non[- ]?essential|all non[- ]?essential))?\s*$/i.test(txt(el)));
-    const acceptMatch = els.find(el => vis(el) && /^\s*(i\s+)?agree\s*$|^\s*accept(\s+all)?\s*$/i.test(txt(el)));
+    // Match buttons/links whose visible text is agree/accept. (We deliberately do NOT
+    // auto-click generic "Reject" buttons by text: on some sites — e.g. Evergreen's
+    // ShipmentLink — a reject button reloads the page, which wipes the fill. Carriers
+    // that support a clean reject expose it explicitly via config.consentSelectors,
+    // e.g. MSC's OneTrust #onetrust-reject-all-handler, tried first below.)
+    const textMatch = [...document.querySelectorAll('button, a, input[type="button"], input[type="submit"]')]
+      .find(el => /^\s*(i\s+)?agree\s*$|^\s*accept(\s+all)?\s*$/i.test(el.textContent?.trim() ?? el.value ?? ''));
 
-    const el = rejectMatch
-      ?? CONSENT_SELECTORS.map(s => document.querySelector(s)).find(Boolean)
-      ?? acceptMatch ?? null;
+    const el = CONSENT_SELECTORS.map(s => document.querySelector(s)).find(Boolean) ?? textMatch ?? null;
 
     if (!el) return;
     const r = el.getBoundingClientRect();
