@@ -105,7 +105,9 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   // ── Type whole string (char-by-char default, or instant for problem sites) ──
 
   async function humanType(el, text) {
-    if (config.typeMethod === 'instant') {
+    // Instant fill is the default for all carriers (set the value in one shot).
+    // A carrier can opt into char-by-char typing with typeMethod: 'char'.
+    if (config.typeMethod !== 'char') {
       await instantFill(el, text);
       return;
     }
@@ -401,11 +403,11 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
   const first = await tryFill();
   if (first) return first;
 
-  // injectOnComplete carriers (e.g. OOCL) run only after the page has fully loaded, so
-  // the search form should already be present. If the first attempt found nothing, this
-  // is a different page — typically OOCL's "verify you are human" interstitial. Stay
-  // hands-off: don't scan/observe it; bail now and let the next navigation (after the
-  // user completes the check and OOCL redirects to the tracking page) re-inject.
+  // All carriers are injected after full page load, so the form should already exist.
+  // Carriers with injectOnComplete opt into "bail if the form isn't here": a missing
+  // form means a different page (e.g. OOCL's "verify you are human" interstitial), so
+  // stay hands-off and let the next navigation re-inject — rather than scanning it for
+  // 15 s. Other carriers fall through to the SPA observer (forms that render late).
   if (config.injectOnComplete) return { ok: false, stage: 'no-input' };
 
   // SPA fallback: watch for dynamic content and retry up to 15 s.
