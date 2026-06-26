@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CARRIERS, Carrier } from './carriers';
 
 @Component({
   selector: 'app-root',
@@ -14,40 +15,46 @@ export class AppComponent implements OnInit {
   statusMessage = '';
   statusType: 'success' | 'error' | '' = '';
 
+  // Supported carriers (Track-Trace is the auto-detect fallback, not shown as a chip).
+  readonly carriers = CARRIERS.filter(c => c.scac !== 'TRTR');
+  private readonly trackTrace = CARRIERS.find(c => c.scac === 'TRTR')!;
+  private readonly CONTAINER_RE = /^[A-Z]{3}[UJZ]\d{7}$/;
+
+  // Sample MBL/container per carrier (click a chip to fill it).
+  private samples: Record<string, string> = {
+    ONEY: 'ONEYCOKG03088800', MSCU: 'MEDUXO992739',     OOLU: 'OOLU2327208850',
+    EGLV: 'EGLV103600018913', CMDU: 'CMDUAID0331341',   MAEU: 'MAEU271035183',
+    HDMU: 'HYDA20002400',     HLCU: 'HLCUBO12605ATNI7', COSU: 'COSU6500018730',
+    WHLC: 'WHLC113G000608',   YMLU: 'YMJAN502064474',   EMIU: 'EMIVINDAHD219708',
+    ZIMU: 'ZIMUTUT6037472',   SMLU: 'SMLMSZP6C4347700', HDUJ: 'HDUJSLA26LO00044',
+    PABV: 'PABVSHOL50301600', SJHH: 'SJHH3100124816',   SSPH: 'SSPHPKL8155012',
+    VSLG: 'VSLG321326000521',
+  };
+
   ngOnInit(): void {
     // Optional ?refno=… in the URL pre-fills the input box (MBL or container).
     const refno = new URLSearchParams(window.location.search).get('refno');
     if (refno) this.mblno = refno.trim().toUpperCase();
   }
 
-  testCarriers: { carrier: string; blno: string }[] = [
-    { carrier: 'ONE Line',              blno: 'ONEYCOKG03088800'  },
-    { carrier: 'MSC',                   blno: 'MEDUXO992739'      },
-    { carrier: 'OOCL',                  blno: 'OOLU2327208850'    },
-    { carrier: 'Evergreen',             blno: 'EGLV103600018913'  },
-    { carrier: 'CMA-CGM',               blno: 'CMDUAID0331341'    },
-    { carrier: 'Maersk',                blno: 'MAEU271035183'     },
-    { carrier: 'HMM',                   blno: 'HYDA20002400'      },
-    { carrier: 'Hapag-Lloyd',           blno: 'HLCUBO12605ATNI7'  },
-    { carrier: 'COSCO',                 blno: 'COSU6500018730'    },
-    { carrier: 'Vanguard Logistics',    blno: 'VSLG321326000521'  },
-    { carrier: 'Wan Hai',               blno: 'WHLC113G000608'    },
-    { carrier: 'Yang Ming',             blno: 'YMJAN502064474'    },
-    { carrier: 'Emirates Line',         blno: 'EMIVINDAHD219708'  },
-    { carrier: 'ZIM',                   blno: 'ZIMUTUT6037472'    },
-    { carrier: 'SM Line',               blno: 'SMLMSZP6C4347700'  },
-    { carrier: 'HEDE Hong Kong',        blno: 'HDUJSLA26LO00044'  },
-    { carrier: 'PIL',                   blno: 'PABVSHOL50301600'  },
-    { carrier: 'Sea-Lead',              blno: 'SJHH3100124816'    },
-    { carrier: 'Seth Shipping',         blno: 'SSPHPKL8155012'    },
-  ];
+  // Auto-detect the carrier from the entered value — mirrors the extension's
+  // classifyQuery + resolveCarrier (container map → BL fallback → Track-Trace).
+  get detected(): { carrier: Carrier; type: 'Container' | 'B/L'; fallback: boolean } | null {
+    const v = this.mblno.trim().toUpperCase().replace(/[\s-]/g, '');
+    if (!v) return null;
+    const prefix = v.substring(0, 4);
+    const isContainer = this.CONTAINER_RE.test(v);
+    const type: 'Container' | 'B/L' = isContainer ? 'Container' : 'B/L';
+    const byMbl = this.carriers.find(c => c.prefixes.includes(prefix));
+    const byCont = this.carriers.find(c => c.containerPrefixes.includes(prefix)) ?? byMbl;
+    const carrier = isContainer ? byCont : byMbl;
+    return carrier
+      ? { carrier, type, fallback: false }
+      : { carrier: this.trackTrace, type, fallback: true };
+  }
 
-  selectedCarrier: { carrier: string; blno: string } | null = null;
-
-  onCarrierSelect(event: Event): void {
-    const idx = (event.target as HTMLSelectElement).value;
-    this.selectedCarrier = idx !== '' ? this.testCarriers[+idx] : null;
-    if (this.selectedCarrier) this.mblno = this.selectedCarrier.blno;
+  fillSample(c: Carrier): void {
+    this.mblno = this.samples[c.scac] ?? '';
   }
 
   openInExtension(): void {
