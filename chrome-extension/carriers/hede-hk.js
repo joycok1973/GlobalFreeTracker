@@ -2,6 +2,7 @@
 CARRIER_CONFIGS['HDUJ'] = {
   scac: 'HDUJ',
   prefixes: ['HDUJ'],
+  containerPrefixes: ['HDUJ'], // HEDE containers are HDUJ + 7 digits (ISO 6346, category J)
   stripPrefix: false,
   hostname: 'elines.hedehk.com',
   url: 'http://elines.hedehk.com/cargoDynamicEN',
