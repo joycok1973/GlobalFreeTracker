@@ -107,13 +107,15 @@ function openTracking(bookingNo, sendResponse) {
     ? bookingNo.toUpperCase().replace(/[\s-]/g, '')
     : (carrier.stripPrefix ? bookingNo.substring(4) : bookingNo);
 
-  // Resolve final URL — use urlTemplate if the carrier supports it
-  const finalUrl = (carrier.urlTemplate && searchBookingNo)
-    ? carrier.urlTemplate.replace('{bookingNo}', encodeURIComponent(searchBookingNo))
+  // Resolve final URL — prefer a per-type template (e.g. COSCO: container vs B/L sets
+  // the page's trackingType), then a generic urlTemplate, else the plain url.
+  const template = carrier.urlTemplateByType?.[searchType] ?? carrier.urlTemplate;
+  const finalUrl = (template && searchBookingNo)
+    ? template.replace('{bookingNo}', encodeURIComponent(searchBookingNo))
     : carrier.url;
 
-  // For URL-template carriers the BL is already in the URL — no form filling needed
-  const finalBookingNo = carrier.urlTemplate ? '' : searchBookingNo;
+  // For URL-template carriers the number is already in the URL — no form filling needed
+  const finalBookingNo = template ? '' : searchBookingNo;
 
   chrome.tabs.create({ url: finalUrl, active: true }, (tab) => {
     if (carrier.openOnly) {

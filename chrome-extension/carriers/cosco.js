@@ -11,6 +11,12 @@ CARRIER_CONFIGS['COSU'] = {
   hostname:    'elines.coscoshipping.com',
   url:         'https://elines.coscoshipping.com/ebusiness/cargoTracking',
   urlTemplate: 'https://elines.coscoshipping.com/ebusiness/cargoTracking?trackingType=BILLOFLADING&number={bookingNo}',
+  // Per-type URL: a container is searched as a container (the page's "Container No."
+  // dropdown is driven by trackingType in the URL), a BL as a Bill of Lading.
+  urlTemplateByType: {
+    container: 'https://elines.coscoshipping.com/ebusiness/cargoTracking?trackingType=CONTAINER&number={bookingNo}',
+    bl:        'https://elines.coscoshipping.com/ebusiness/cargoTracking?trackingType=BILLOFLADING&number={bookingNo}'
+  },
   inputSelectors: [],
   submitSelectors: [],
   submitMethod: 'none',
