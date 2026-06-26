@@ -2,7 +2,14 @@
 CARRIER_CONFIGS['MAEU'] = {
   scac:        'MAEU',
   prefixes:    ['MAEU', 'MRKU', 'MSKU'],
-  containerPrefixes: ['MAEU', 'MSKU', 'MRKU', 'MRSU', 'MHHU', 'MNBU', 'MGLU', 'PONU'], // PONU = legacy P&O Nedlloyd
+  // Maersk-owned codes + fully-integrated brands that track on maersk.com:
+  // Maersk Line (MAEU/MSKU/MRKU/…), P&O Nedlloyd (PONU), Sealand (SEAU/SLLU/SEKU),
+  // Safmarine (SAFU). Leased codes Maersk only operates (FFAU, TCLU, CAAU, …) are
+  // intentionally excluded. Hamburg Süd (SUDU/HASU) has its own tracking site — not here.
+  containerPrefixes: [
+    'MAEU', 'MSKU', 'MRKU', 'MRSU', 'MHHU', 'MNBU', 'MGLU', 'MVIU', 'MCAU', 'MWCU', 'MIEU', 'MSAU',
+    'PONU', 'SEAU', 'SLLU', 'SEKU', 'SAFU'
+  ],
   stripPrefix: true,
   hostname:    'www.maersk.com',
   url:         'https://www.maersk.com/tracking/',
