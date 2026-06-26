@@ -174,13 +174,15 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     // machines the button can render/lay-out slightly after the input is filled,
     // so a single attempt would miss it and the click would never land.
     const SUBMIT_RETRIES = 12; // ~12 × 300 ms ≈ 3.6 s
+    const isVisible = el => el.offsetParent !== null || el.getBoundingClientRect().width > 0;
     for (let attempt = 0; attempt < SUBMIT_RETRIES; attempt++) {
       for (const sel of config.submitSelectors) {
         try {
-          const btn = document.querySelector(sel);
+          // Pick the first VISIBLE match, not just the first: pages like Evergreen's
+          // ShipmentLink have one Submit button per tab, and an earlier hidden tab's
+          // button would otherwise be chosen (and skipped) forever.
+          const btn = [...document.querySelectorAll(sel)].find(isVisible);
           if (!btn) continue;
-          // Skip only if truly not rendered yet (gives it another retry).
-          if (btn.offsetParent === null && btn.getBoundingClientRect().width === 0) continue;
           // Wait up to 1 s for framework to enable the button
           for (let i = 0; i < 7 && btn.disabled; i++) await sleep(150);
           if (btn.disabled) { btn.disabled = false; btn.removeAttribute('disabled'); }
