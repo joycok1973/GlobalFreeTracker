@@ -21,6 +21,9 @@ CARRIER_CONFIGS['VSLG'] = {
     'input[type="submit"]'
   ],
   submitMethod: 'click',
+  // Cookie bar ("…GOT IT!") appears with results; poll for it and dismiss ("Got it"
+  // matches the generic consent matcher).
+  consentPoll: true,
 
   scrape() {
     // TODO: extract tracking results from Vanguard page

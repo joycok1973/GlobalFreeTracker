@@ -238,7 +238,7 @@ async function fillBookingNumber(bookingNo, hostname, config, searchType) {
     let el = CONSENT_SELECTORS.map(s => document.querySelector(s)).find(Boolean);
     if (!el) { // only run the expensive whole-page text scan when no selector matched
       el = [...document.querySelectorAll('button, a, input[type="button"], input[type="submit"]')]
-        .find(b => /^\s*(i\s+)?agree\s*$|^\s*(accept|allow)(\s+all)?\s*$/i.test(b.textContent?.trim() ?? b.value ?? ''));
+        .find(b => /^\s*(i\s+)?agree\s*$|^\s*(accept|allow)(\s+all)?\s*$|^\s*got\s+it!?\s*$/i.test(b.textContent?.trim() ?? b.value ?? ''));
     }
     if (!el) return false;
     const r = el.getBoundingClientRect();
