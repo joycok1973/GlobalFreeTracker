@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shipment Tracking</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, Segoe UI, Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      width: 500px;
+      max-width: 95vw;
+      overflow: hidden;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.4);
+      color: white;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #1a6fc4, #0e4fa0);
+      padding: 32px 32px 28px;
+      text-align: center;
+    }
+    .icon-wrap { font-size: 48px; margin-bottom: 12px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); }
+    h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; opacity: 0.8; }
+
+    .card-body { padding: 28px 32px 24px; }
+
+    .field-label {
+      display: block; font-size: 12px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.8px; color: rgba(255, 255, 255, 0.6); margin-bottom: 10px;
+    }
+
+    .text-input {
+      width: 100%; padding: 14px 16px;
+      background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 10px; color: white; font-size: 15px; letter-spacing: 0.5px;
+      outline: none; transition: border-color 0.2s, background 0.2s;
+    }
+    .text-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+    .text-input:hover { border-color: rgba(26, 111, 196, 0.8); background: rgba(255, 255, 255, 0.12); }
+    .text-input:focus { border-color: #1a6fc4; box-shadow: 0 0 0 3px rgba(26, 111, 196, 0.25); }
+
+    .carriers { margin-top: 18px; }
+    .carriers-label {
+      display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.8px; color: rgba(255, 255, 255, 0.4); margin-bottom: 10px;
+    }
+    .carriers-hint { text-transform: none; letter-spacing: 0; font-weight: 400; color: rgba(255, 255, 255, 0.3); }
+    .carriers-grid { display: flex; flex-wrap: wrap; gap: 7px; }
+
+    .carrier-chip {
+      padding: 6px 11px; background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 20px;
+      color: rgba(255, 255, 255, 0.7); font-size: 12px; font-family: inherit; cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+    }
+    .carrier-chip:hover {
+      border-color: rgba(26, 111, 196, 0.7); color: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .status-banner {
+      margin-top: 14px; padding: 12px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+    }
+    .status-banner.success { background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.4); color: #4ade80; }
+    .status-banner.error   { background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #f87171; }
+
+    .card-footer {
+      padding: 14px 32px; border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      font-size: 11px; color: rgba(255, 255, 255, 0.3); letter-spacing: 0.3px;
+    }
+    .store-link { color: #4ea3f0; text-decoration: none; font-weight: 600; white-space: nowrap; transition: color 0.15s; }
+    .store-link:hover { color: #7bc0ff; text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="card-header">
+      <div class="icon-wrap">🚢</div>
+      <h1>Shipment Tracking</h1>
+      <p class="subtitle">Enter an MBL# / Container#, then pick its carrier to track</p>
+    </div>
+
+    <div class="card-body">
+      <label class="field-label" for="trackingNo">MBL# / Container#</label>
+      <input id="trackingNo" type="text" class="text-input"
+             placeholder="e.g. MEDUXO992739" autocomplete="off" spellcheck="false" />
+
+      <div class="carriers">
+        <span class="carriers-label">Choose carrier <span class="carriers-hint">(click to track)</span></span>
+        <div class="carriers-grid" id="carriers"></div>
+      </div>
+
+      <div id="status" class="status-banner" style="display:none"></div>
+    </div>
+
+    <div class="card-footer">
+      <span>Powered by Chrome Extension</span>
+      <a class="store-link" target="_blank" rel="noopener noreferrer"
+         href="https://chromewebstore.google.com/detail/mbl-and-container-tracker/liioidcjhlojlenmofmbpbaojhkielcb">More details ↗</a>
+    </div>
+  </div>
+
+  <script>
+    // Carriers the user can pick from — name + SCAC only (detection lives in the extension).
+    // Keep SCAC codes in sync with chrome-extension/carriers/*.js.
+    const CARRIERS = [
+      { name: 'ONE Line',           scac: 'ONEY' },
+      { name: 'MSC',                scac: 'MSCU' },
+      { name: 'OOCL',               scac: 'OOLU' },
+      { name: 'Evergreen',          scac: 'EGLV' },
+      { name: 'CMA-CGM',            scac: 'CMDU' },
+      { name: 'Maersk',             scac: 'MAEU' },
+      { name: 'HMM',                scac: 'HDMU' },
+      { name: 'Hapag-Lloyd',        scac: 'HLCU' },
+      { name: 'COSCO',              scac: 'COSU' },
+      { name: 'Wan Hai',            scac: 'WHLC' },
+      { name: 'Yang Ming',          scac: 'YMLU' },
+      { name: 'Emirates Line',      scac: 'EMIU' },
+      { name: 'ZIM',                scac: 'ZIMU' },
+      { name: 'SM Line',            scac: 'SMLU' },
+      { name: 'HEDE Hong Kong',     scac: 'HDUJ' },
+      { name: 'PIL',                scac: 'PABV' },
+      { name: 'Sea-Lead',           scac: 'SJHH' },
+      { name: 'Seth Shipping',      scac: 'SSPH' },
+      { name: 'Vanguard Logistics', scac: 'VSLG' },
+    ];
+
+    const input  = document.getElementById('trackingNo');
+    const status = document.getElementById('status');
+    let statusTimer;
+
+    function showStatus(message, type) {
+      status.textContent = (type === 'success' ? '✓ ' : '✕ ') + message;
+      status.className = 'status-banner ' + type;
+      status.style.display = '';
+      clearTimeout(statusTimer);
+      statusTimer = setTimeout(() => { status.style.display = 'none'; }, 3500);
+    }
+
+    // The extension opens this page with ?refno=… when it can't detect the carrier.
+    const refno = new URLSearchParams(location.search).get('refno');
+    if (refno) input.value = refno.trim().toUpperCase();
+    input.addEventListener('input', () => { input.value = input.value.toUpperCase(); });
+
+    // Clicking a carrier tells the extension which carrier to open for the entered number.
+    function trackWithCarrier(carrier) {
+      const trackingNo = input.value.trim().toUpperCase();
+      if (!trackingNo) { showStatus('Enter an MBL or Container number first.', 'error'); return; }
+      window.postMessage({ action: 'OPEN_SHIPPING_URL', bookingNo: trackingNo, scac: carrier.scac }, '*');
+      showStatus('Opening ' + carrier.name + '…', 'success');
+    }
+
+    const grid = document.getElementById('carriers');
+    for (const c of CARRIERS) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'carrier-chip';
+      btn.title = c.scac;
+      btn.textContent = c.name;
+      btn.addEventListener('click', () => trackWithCarrier(c));
+      grid.appendChild(btn);
+    }
+  </script>
+</body>
+</html>

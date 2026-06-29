@@ -97,7 +97,7 @@ function resolveCarrier(value, queryType) {
 
 // Web app used for manual carrier selection when the carrier can't be auto-detected.
 // (For local dev, point this at 'http://localhost:4200'.)
-const MANUAL_SELECT_URL = 'https://www.cargomar.in/extension/tracker.html';
+const MANUAL_SELECT_URL = 'https://tracking.globaltechmentor.com/extension/tracker.html';
 
 // ── Shared: open carrier tab and queue form fill ─────────────────────────────
 // scac        — optional: carrier chosen by the user in the app (overrides detection).
